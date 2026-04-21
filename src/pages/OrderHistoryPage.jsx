@@ -55,8 +55,8 @@ export const OrderHistoryPage = () => {
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <p className="font-bold text-slate-800">Order #{order.id?.slice(0, 8)}</p>
-                  <p className="text-xs text-slate-500">{new Date(order.createdAt).toLocaleDateString()}</p>
+                  <p className="font-bold text-slate-800">Order #{order.order_reference || order.id}</p>
+                  <p className="text-xs text-slate-500">{new Date(order.created_at).toLocaleDateString()}</p>
                 </div>
                 <span className={`px-3 py-1 text-[10px] font-black rounded-full ${getStatusColor(order.status)}`}>
                   {order.status?.toUpperCase()}
@@ -64,7 +64,7 @@ export const OrderHistoryPage = () => {
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-slate-600">{order.items?.length || 0} items</p>
-                <p className="font-black text-slate-800">R {order.total?.toLocaleString()}</p>
+                <p className="font-black text-slate-800">R {Number(order.total_amount || 0).toLocaleString()}</p>
               </div>
             </button>
           ))

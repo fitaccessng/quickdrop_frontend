@@ -18,8 +18,11 @@ export const VendorLoginPage = () => {
     mutationFn: loginVendor,
     onSuccess: (data) => {
       setSession(data.access_token, data.user, "vendor");
-      navigate(data.user?.is_onboarded ? "/marketplace" : "/vendor/onboarding");
+      navigate(data.user?.is_onboarded ? "/vendor/dashboard" : "/vendor/onboarding");
     },
+    onError: (err) => {
+      setFormError(err.response?.data?.detail || "Login failed. Try the unified login page instead. Go to /login");
+    }
   });
 
     const handleGoogleSignup = () => {

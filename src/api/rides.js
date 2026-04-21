@@ -10,7 +10,7 @@ import http from "./http";
  * @returns {Promise<Object>} Ride response with ride_id, status, etc.
  */
 export const requestRide = async (payload) => {
-  const { data } = await http.post("/rides/request", payload);
+  const { data } = await http.post("/request-rider", payload);
   return data;
 };
 

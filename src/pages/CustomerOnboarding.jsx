@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { updateProfile } from '../api/auth';
 import { PageContainer } from '../components/common/PageContainer';
 import { SectionHeading } from '../components/common/SectionHeading';
 import { useAuthStore } from '../store/authStore';
@@ -42,26 +43,26 @@ const SA_CITIES = [
 
 export const CustomerOnboarding = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const user = useAuthStore((state) => state.user);
+  const setProfile = useAuthStore((state) => state.setProfile);
   const [form, setForm] = useState({
     country: 'SA',
-    city: '',
-    state: '',
-    street: '',
-    pobox: '',
-    profilePicture: null,
+    city: user?.city || '',
+    state: user?.state || '',
+    street: user?.street || '',
+    pobox: user?.po_box || '',
+    avatar_url: user?.avatar_url || '',
     phone: user?.phone || '',
   });
 
-  const [previewImage, setPreviewImage] = useState(user?.avatar || null);
+  const [previewImage, setPreviewImage] = useState(user?.avatar_url || null);
 
   const mutation = useMutation({
-    mutationFn: async (data) => {
-      // TODO: Call API to update customer profile
-      console.log('Updating customer profile:', data);
-      return data;
-    },
-    onSuccess: () => {
+    mutationFn: updateProfile,
+    onSuccess: (data) => {
+      setProfile(data);
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
       navigate('/dashboard');
     },
   });
@@ -72,7 +73,7 @@ export const CustomerOnboarding = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewImage(reader.result);
-        setForm((prev) => ({ ...prev, profilePicture: file }));
+        setForm((prev) => ({ ...prev, avatar_url: reader.result }));
       };
       reader.readAsDataURL(file);
     }
@@ -86,7 +87,14 @@ export const CustomerOnboarding = () => {
       return;
     }
 
-    mutation.mutate(form);
+    mutation.mutate({
+      phone: form.phone,
+      city: form.city,
+      state: form.state,
+      street: form.street,
+      po_box: form.pobox || null,
+      avatar_url: form.avatar_url || null,
+    });
   };
 
   return (

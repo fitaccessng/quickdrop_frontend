@@ -5,6 +5,11 @@ export const submitOrder = async (payload) => {
   return data;
 };
 
+export const fetchOrderQuote = async (payload) => {
+  const { data } = await http.post("/orders/quote", payload);
+  return data;
+};
+
 /**
  * Fetch tracking info for either an order or ride based on ID
  * @param {string} id - Order ID or Ride ID (ride IDs start with 'ride_')

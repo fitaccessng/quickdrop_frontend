@@ -80,8 +80,8 @@ export const VendorSignupPage = () => {
   const mutation = useMutation({
     mutationFn: registerVendor,
     onSuccess: (data) => {
-      setSession(data.access_token, data.user, "vendor");
-      navigate("/vendor/onboarding");
+      // Don't auto-login, let them log in to trigger onboarding check
+      navigate("/vendor/login");
     },
     onError: (err) => setFormError(err.response?.data?.detail || "Registration failed")
   });

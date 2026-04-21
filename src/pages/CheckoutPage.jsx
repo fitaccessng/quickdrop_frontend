@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { createAddress, fetchProfile } from "../api/auth";
-import { submitOrder } from "../api/orders";
+import { fetchOrderQuote, submitOrder } from "../api/orders";
 import { formatMoney } from "../lib/utils";
 import { useCartStore } from "../store/cartStore";
 
@@ -45,6 +45,8 @@ export const CheckoutPage = () => {
     state: "Gauteng",
     postal_code: "",
     delivery_notes: "",
+    latitude: null,
+    longitude: null,
     is_default: true,
   });
 
@@ -72,18 +74,41 @@ export const CheckoutPage = () => {
     },
   });
 
-  // Calculations
-  const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-  const estimatedDelivery = new Set(items.map((item) => item.vendorId)).size * 1500;
-  const serviceFee = 250;
-  const totals = { 
-    subtotal, 
-    estimatedDelivery, 
-    serviceFee, 
-    grandTotal: subtotal + estimatedDelivery + serviceFee 
-  };
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setAddressForm((current) => ({
+          ...current,
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        }));
+      },
+      () => {},
+    );
+  }, []);
 
   const canCheckout = items.length && (selectedAddressId || profileQuery.data?.addresses?.[0]?.id);
+  const quotePayload = canCheckout
+    ? {
+        address_id: selectedAddressId ?? profileQuery.data?.addresses?.[0]?.id,
+        payment_method: paymentMethod,
+        items: items.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
+      }
+    : null;
+
+  const quoteQuery = useQuery({
+    queryKey: ["checkout-quote", quotePayload],
+    queryFn: () => fetchOrderQuote(quotePayload),
+    enabled: Boolean(quotePayload),
+  });
+
+  const fallbackSubtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  const totals = quoteQuery.data ?? {
+    subtotal_amount: fallbackSubtotal,
+    delivery_fee: 0,
+    total_amount: fallbackSubtotal,
+  };
 
   // Handlers
   const handleInputChange = (e) => {
@@ -273,15 +298,15 @@ export const CheckoutPage = () => {
           <div className="space-y-3 text-[11px] font-black uppercase tracking-widest text-slate-400">
             <div className="flex justify-between">
               <span>Subtotal</span>
-              <span className="text-slate-900">{formatMoney(totals.subtotal)}</span>
+              <span className="text-slate-900">{formatMoney(totals.subtotal_amount)}</span>
             </div>
             <div className="flex justify-between">
               <span>Delivery Fee</span>
-              <span className="text-slate-900">{formatMoney(totals.estimatedDelivery)}</span>
+              <span className="text-slate-900">{formatMoney(totals.delivery_fee)}</span>
             </div>
             <div className="flex justify-between items-center pt-2 text-rose-600">
               <span className="text-xs">Grand Total</span>
-              <span className="text-3xl tracking-tighter text-slate-900">{formatMoney(totals.grandTotal)}</span>
+              <span className="text-3xl tracking-tighter text-slate-900">{formatMoney(totals.total_amount)}</span>
             </div>
           </div>
         </section>
@@ -316,7 +341,7 @@ export const CheckoutPage = () => {
           className={`w-full py-5 rounded-2xl text-white font-headline font-black text-lg shadow-xl active:scale-[0.98] transition-all duration-300 ${!canCheckout ? 'bg-slate-200 shadow-none' : ''}`}
           style={canCheckout ? { background: signatureGradient } : {}}
         >
-          {checkoutMutation.isPending ? "PROCESSING..." : `PAY ${formatMoney(totals.grandTotal)}`}
+          {checkoutMutation.isPending ? "PROCESSING..." : `PAY ${formatMoney(totals.total_amount)}`}
         </button>
       </footer>
     </div>

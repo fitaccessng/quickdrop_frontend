@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { AuthLayout } from '../components/auth/AuthLayout';
 import { RoleSelectionModal } from '../components/auth/RoleSelectionModal';
-import { registerUser, registerVendor } from '../api/auth';
+import { unifiedSignup } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
 import { FaApple } from "react-icons/fa";
 
@@ -17,6 +17,9 @@ export const UnifiedSignup = () => {
     phone: '',
     password: '',
     confirmPassword: '',
+    businessName: '',
+    category: '',
+    city: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -64,40 +67,72 @@ export const UnifiedSignup = () => {
     setShowRoleModal(true);
   };
 
-  const handleRoleSelect = async (role) => {
+  const handleRoleSelect = (role) => {
     setSelectedRole(role);
-    
-    if (role === 'user') {
-      userMutation.mutate({
-        full_name: tempSignupData.fullName,
-        email: tempSignupData.email,
-        phone: tempSignupData.phone,
-        password: tempSignupData.password,
-      });
-    } else if (role === 'vendor') {
-      setShowRoleModal(false);
-      navigate('/vendor/onboarding', { 
-        state: { signupData: tempSignupData, isNewSignup: true } 
-      });
-    } else if (role === 'rider') {
-      setShowRoleModal(false);
-      navigate('/rider/onboarding', { 
-        state: { signupData: tempSignupData, isNewSignup: true } 
-      });
+    const payload = {
+      full_name: tempSignupData.fullName,
+      email: tempSignupData.email,
+      phone: tempSignupData.phone || "",
+      password: tempSignupData.password,
+      role: role,
+    };
+
+    // Only add vendor fields if role is vendor AND they're filled
+    if (role === 'vendor') {
+      if (tempSignupData.businessName?.trim()) {
+        payload.business_name = tempSignupData.businessName;
+      }
+      if (tempSignupData.category?.trim()) {
+        payload.category = tempSignupData.category;
+      }
+      if (tempSignupData.city?.trim()) {
+        payload.city = tempSignupData.city;
+      }
     }
+
+    console.log("Sending payload:", payload);
+    signupMutation.mutate(payload);
   };
 
-  const userMutation = useMutation({
-    mutationFn: registerUser,
+  const signupMutation = useMutation({
+    mutationFn: unifiedSignup,
     onSuccess: (data) => {
-      setSession(data.access_token, data.user, 'user');
+      setSession(data.access_token, data.user, data.account_type);
       setShowRoleModal(false);
-      navigate('/onboarding');
+      
+      // Route based on account type
+      if (data.account_type === 'vendor') {
+        navigate(data.user?.is_onboarded ? '/vendor/dashboard' : '/vendor/onboarding');
+      } else if (data.account_type === 'rider') {
+        navigate(data.user?.is_onboarded ? '/rider/dashboard' : '/rider/onboarding');
+      } else {
+        navigate('/onboarding');
+      }
     },
+    onError: (err) => {
+      try {
+        const detail = err.response?.data?.detail;
+        if (Array.isArray(detail)) {
+          // Handle Pydantic validation errors
+          const messages = detail.map((error) => {
+            if (typeof error === 'string') return error;
+            if (error.msg) return error.msg;
+            return 'Invalid input';
+          }).join(', ');
+          setFormError(messages);
+        } else if (typeof detail === 'string') {
+          setFormError(detail);
+        } else {
+          setFormError('Signup failed. Please try again.');
+        }
+      } catch (e) {
+        setFormError('Signup failed. Please try again.');
+      }
+      setShowRoleModal(false);
+    }
   });
 
-  const isLoading = userMutation.isPending;
-  const error = userMutation.error;
+  const isLoading = signupMutation.isPending;
 
   return (
     <AuthLayout
@@ -291,25 +326,6 @@ export const UnifiedSignup = () => {
           </label>
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-error/10 border border-error rounded-lg">
-            <p className="text-error text-sm font-medium">
-              {(() => {
-                try {
-                  const detail = error.response?.data?.detail;
-                  if (Array.isArray(detail)) {
-                    return detail.map((err) => {
-                      return typeof err === 'string' ? err : err.msg || JSON.stringify(err);
-                    }).join(", ");
-                  }
-                  return typeof detail === 'string' ? detail : 'Unable to create account';
-                } catch (e) {
-                  return 'An error occurred. Please try again.';
-                }
-              })()}
-            </p>
-          </div>
-        )}
 
         <button
           className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold py-4 rounded-xl shadow-lg shadow-primary-container/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60 mt-6"

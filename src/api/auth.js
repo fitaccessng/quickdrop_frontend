@@ -5,8 +5,18 @@ export const registerUser = async (payload) => {
   return data;
 };
 
+export const unifiedSignup = async (payload) => {
+  const { data } = await http.post("/auth/unified-signup", payload);
+  return data;
+};
+
 export const loginUser = async (payload) => {
   const { data } = await http.post("/auth/login", payload);
+  return data;
+};
+
+export const unifiedLogin = async (payload) => {
+  const { data } = await http.post("/auth/unified-login", payload);
   return data;
 };
 
@@ -22,6 +32,11 @@ export const resetUserPassword = async (payload) => {
 
 export const fetchProfile = async () => {
   const { data } = await http.get("/user/me");
+  return data;
+};
+
+export const updateProfile = async (payload) => {
+  const { data } = await http.patch("/user/me", payload);
   return data;
 };
 

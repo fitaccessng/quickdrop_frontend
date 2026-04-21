@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { AuthLayout } from '../components/auth/AuthLayout';
-import { loginUser, loginVendor } from '../api/auth';
+import { unifiedLogin } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
 import { FaApple } from "react-icons/fa";
 
@@ -16,7 +16,6 @@ export const UnifiedLogin = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [formError, setFormError] = useState('');
   const [oauthMessage, setOauthMessage] = useState('');
-  const [accountType, setAccountType] = useState('user');
 
   const handleGoogleLogin = () => {
     setOauthMessage('Google sign-in is not wired on the frontend yet. Use your email and password for now.');
@@ -41,31 +40,30 @@ export const UnifiedLogin = () => {
       return;
     }
 
-    if (accountType === 'user') {
-      userMutation.mutate({ email, password });
-    } else if (accountType === 'vendor') {
-      vendorMutation.mutate({ email, password });
-    }
+    loginMutation.mutate({ email, password });
   };
 
-  const userMutation = useMutation({
-    mutationFn: loginUser,
+  const loginMutation = useMutation({
+    mutationFn: unifiedLogin,
     onSuccess: (data) => {
-      setSession(data.access_token, data.user, 'user');
-      navigate('/dashboard');
+      // Auto-detect account type and route accordingly
+      setSession(data.access_token, data.user, data.account_type);
+      
+      if (data.account_type === 'vendor') {
+        navigate(data.user?.is_onboarded ? '/vendor/dashboard' : '/vendor/onboarding');
+      } else if (data.account_type === 'rider') {
+        navigate(data.user?.is_onboarded ? '/rider/dashboard' : '/rider/onboarding');
+      } else {
+        navigate('/dashboard');
+      }
     },
+    onError: (err) => {
+      setFormError(err.response?.data?.detail || 'Invalid email or password');
+    }
   });
 
-  const vendorMutation = useMutation({
-    mutationFn: loginVendor,
-    onSuccess: (data) => {
-      setSession(data.access_token, data.user, 'vendor');
-      navigate(data.user?.is_onboarded ? '/vendor/dashboard' : '/vendor/onboarding');
-    },
-  });
-
-  const isLoading = userMutation.isPending || vendorMutation.isPending;
-  const error = userMutation.error || vendorMutation.error;
+  const isLoading = loginMutation.isPending;
+  const error = loginMutation.error;
 
   return (
     <AuthLayout
@@ -117,32 +115,6 @@ export const UnifiedLogin = () => {
           Or Email
         </span>
         <div className="flex-grow border-t border-surface-container-highest"></div>
-      </div>
-
-      {/* Account Type Selector */}
-      <div className="flex gap-3 mb-6 bg-surface-container rounded-xl p-1">
-        <button
-          type="button"
-          onClick={() => { setAccountType('user'); setFormError(''); }}
-          className={`flex-1 py-3 rounded-lg font-bold text-xs uppercase tracking-widest transition-all ${
-            accountType === 'user'
-              ? 'bg-primary text-on-primary'
-              : 'text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          Customer
-        </button>
-        <button
-          type="button"
-          onClick={() => { setAccountType('vendor'); setFormError(''); }}
-          className={`flex-1 py-3 rounded-lg font-bold text-xs uppercase tracking-widest transition-all ${
-            accountType === 'vendor'
-              ? 'bg-primary text-on-primary'
-              : 'text-on-surface-variant hover:text-on-surface'
-          }`}
-        >
-          Merchant
-        </button>
       </div>
 
       <form className="space-y-5" onSubmit={handleSubmit}>

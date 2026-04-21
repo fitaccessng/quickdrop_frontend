@@ -34,8 +34,8 @@ export const RequestRiderPage = () => {
     onSuccess: (data) => {
       navigate(`/tracking/${data.ride_id}`, { state: { rideData: data } });
     },
-    onError: () => {
-      alert('Failed to request rider. Please try again.');
+    onError: (error) => {
+      alert(error.response?.data?.detail || 'Failed to request rider. Please try again.');
     },
   });
 

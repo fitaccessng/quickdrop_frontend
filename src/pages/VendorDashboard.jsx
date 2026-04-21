@@ -1,223 +1,294 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
-/**
- * VendorDashboard Component
- * Replaces the static product detail page with a dynamic vendor management interface.
- * Features: Responsive grid, tabbed navigation, and mobile-first bottom nav.
- */
+import { fetchProducts } from "../api/products";
+import { fetchVendorAnalytics, fetchVendorOrders, fetchVendorProfile } from "../api/vendorPortal";
+import { formatMoney } from "../lib/utils";
+import { getInventoryStats, getOrderMetrics, getPopularProducts } from "../lib/vendorPortal";
+
 export const VendorDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
 
-  // Kinetic Branding & Styles
-  const signatureGradient = "linear-gradient(135deg, #ff9300 0%, #ffb857 100%)";
+  const profileQuery = useQuery({ queryKey: ["vendor-profile"], queryFn: fetchVendorProfile });
+  const analyticsQuery = useQuery({ queryKey: ["vendor-analytics"], queryFn: fetchVendorAnalytics });
+  const ordersQuery = useQuery({ queryKey: ["vendor-orders-preview"], queryFn: fetchVendorOrders });
+  const productsQuery = useQuery({
+    queryKey: ["vendor-products-dashboard", profileQuery.data?.id],
+    queryFn: () => fetchProducts({ vendor_id: profileQuery.data.id, include_unavailable: true }),
+    enabled: Boolean(profileQuery.data?.id),
+  });
+
+  const vendor = profileQuery.data;
+  const analytics = analyticsQuery.data;
+  const orders = ordersQuery.data ?? [];
+  const products = productsQuery.data ?? [];
+  const orderMetrics = useMemo(() => getOrderMetrics(orders), [orders]);
+  const inventoryStats = useMemo(() => getInventoryStats(products), [products]);
+  const popularProducts = useMemo(() => getPopularProducts(orders).slice(0, 3), [orders]);
+
   const materialIconFill = { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" };
 
-  const stats = [
-    { label: "Active Orders", value: "12", icon: "shopping_cart", color: "text-emerald-600", bg: "bg-emerald-50" },
-    { label: "Total Sales", value: "R 420k", icon: "payments", color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Products", value: "48", icon: "inventory_2", color: "text-[#ff9300]", bg: "bg-orange-50" },
-  ];
+  if (profileQuery.isLoading || analyticsQuery.isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-100 border-t-[#ff9300]" />
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-[#f5f6f7] font-body text-slate-900 min-h-screen flex flex-col antialiased">
-      
-      {/* --- Dashboard Header --- */}
-      <header className="p-6 bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="flex justify-between items-center max-w-5xl mx-auto w-full">
-          <div>
-            <h1 className="text-xl font-black tracking-tight font-headline">Vendor Center</h1>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kinetic Marketplace</p>
-          </div>
-          <div className="flex gap-3">
-            <button className="relative w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center transition-transform active:scale-95">
-              <span className="material-symbols-outlined text-slate-600">notifications</span>
-              <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></div>
-            </button>
-            <div className="w-10 h-10 rounded-xl bg-slate-200 overflow-hidden border border-slate-300">
-              <img 
-                src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&q=80" 
-                alt="Vendor Profile" 
-                className="w-full h-full object-cover" 
-              />
-            </div>
-          </div>
+    <div className="min-h-screen bg-white pt-20 font-body antialiased text-slate-900">
+      <header className="fixed top-0 z-50 flex w-full items-center justify-between bg-white px-6 py-4">
+        <div className="flex items-center gap-3">
+          <span className="font-headline text-xl font-extrabold tracking-tight text-slate-900">
+            QuickDrop
+          </span>
+        </div>
+        <div className="h-10 w-10 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+          <img
+            alt="Vendor Profile"
+            src={vendor?.logo_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuCfkB6cjWDXmZMSFKo0Zulkq3Ztp0U3KQntRZ_3-11cpX1vGFwTMCraj72aKbnHKPJQobLtqQffUqhFVpny2_I4mqm5sym2U7Da55rmkZ5bW5MT-ZrS9VaeWvfXoUZt2GaR3QC3kadzF8Rxtu5XHcjZOfGU53jsVVcjURHiO6U3looOC1xv52QDs59UIKtGwAvvpAs7NXwNhbL_L9X4lgndA8mtZgWzB893O64lkuacVcdjhQ20wlFgXgDnOsBor0wM5BdlE0unYBAh"}
+            className="h-full w-full object-cover"
+          />
         </div>
       </header>
 
-      {/* --- Main Content --- */}
-      <main className="flex-1 p-4 md:p-6 max-w-5xl mx-auto w-full space-y-6 md:space-y-8 pb-32">
-        
-        {/* Quick Stats Grid - Responsive Column Handling */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {stats.map((stat, i) => (
-            <div key={i} className="bg-white p-5 rounded-[1.5rem] border border-slate-200 shadow-sm transition-hover hover:shadow-md">
-              <div className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center mb-4`}>
-                <span className="material-symbols-outlined text-xl" style={materialIconFill}>{stat.icon}</span>
-              </div>
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">{stat.label}</p>
-              <p className="text-2xl font-black text-slate-800 tracking-tight">{stat.value}</p>
-            </div>
-          ))}
+      <main className="mx-auto max-w-5xl px-6 pb-32 space-y-8">
+        <section className="space-y-2">
+          <p className="font-label text-xs font-bold uppercase tracking-wide text-[#ff9300]">
+            Vendor Operations
+          </p>
+          <h1 className="font-headline text-4xl font-extrabold leading-tight tracking-tight text-slate-900">
+            Welcome back, <br />
+            {vendor?.name?.split(" ")[0] || "Vendor"}
+          </h1>
+          <p className="text-slate-500">
+            Daily revenue is {formatMoney(orderMetrics.dailyRevenue)} and you currently have {orderMetrics.pending} incoming orders waiting.
+          </p>
         </section>
 
-        {/* Dynamic Section Switcher Card */}
-        <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
-          {/* Internal Navigation Tabs */}
-          <nav className="flex border-b border-slate-100 overflow-x-auto no-scrollbar scroll-smooth">
-            {['Overview', 'Orders', 'Inventory', 'Upload'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab.toLowerCase())}
-                className={`px-6 py-5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                  activeTab === tab.toLowerCase() 
-                  ? 'text-[#ff9300] border-b-2 border-[#ff9300] bg-orange-50/30' 
-                  : 'text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </nav>
+        <nav className="no-scrollbar flex gap-2 overflow-x-auto py-2">
+          {["Overview", "Orders", "Inventory"].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab.toLowerCase())}
+              className={`whitespace-nowrap rounded-full px-5 py-2 text-xs font-bold transition-all ${
+                activeTab === tab.toLowerCase() ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </nav>
 
-          <div className="p-6">
-            {/* Overview Tab Content */}
-            {activeTab === 'overview' && (
-              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Recent Activity</h3>
-                {[1, 2, 3].map((_, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100 transition-colors cursor-pointer group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-11 h-11 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#ff9300]">
-                        <span className="material-symbols-outlined">package_2</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-800">Order #KN-829{i}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Ready for pickup • 2 items</p>
-                      </div>
-                    </div>
-                    <span className="material-symbols-outlined text-slate-300 group-hover:text-[#ff9300] transition-colors">chevron_right</span>
-                  </div>
-                ))}
-              </div>
-            )}
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          {activeTab === "overview" && (
+            <div className="space-y-6">
+              <section className="grid grid-cols-2 gap-4">
+                <MetricCard
+                  label="Daily Revenue"
+                  value={formatMoney(orderMetrics.dailyRevenue)}
+                  icon="payments"
+                  tone="orange"
+                />
+                <MetricCard
+                  label="Completed Orders"
+                  value={orderMetrics.completed}
+                  icon="task_alt"
+                />
+                <MetricCard
+                  label="Pending Orders"
+                  value={orderMetrics.pending}
+                  icon="hourglass_top"
+                />
+                <MetricCard
+                  label="Available Products"
+                  value={inventoryStats.availableProducts}
+                  icon="inventory_2"
+                />
+              </section>
 
-            {/* Upload Tab Content */}
-            {activeTab === 'upload' && (
-              <div className="space-y-6 animate-in fade-in zoom-in-95 duration-300">
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Product Name</label>
-                  <input className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-[#ff9300]/20 focus:border-[#ff9300] outline-none transition-all" placeholder="Ex: Kinetic Wireless Charger" />
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Price (R)</label>
-                    <input className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-[#ff9300]/20 focus:border-[#ff9300] outline-none" placeholder="0.00" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-slate-400 uppercase ml-2 tracking-widest">Category</label>
-                    <select className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-[#ff9300]/20 focus:border-[#ff9300] outline-none appearance-none cursor-pointer">
-                      <option>Electronics</option>
-                      <option>Fashion</option>
-                      <option>Food</option>
-                    </select>
+              <section className="relative overflow-hidden rounded-2xl bg-slate-900 p-8 text-white">
+                <div className="relative z-10 space-y-4">
+                  <span className="material-symbols-outlined text-4xl text-[#ff9300]" style={materialIconFill}>
+                    insights
+                  </span>
+                  <h3 className="max-w-[240px] font-headline text-2xl font-bold">Orders Summary</h3>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <SummaryPill label="Incoming" value={orderMetrics.pending} />
+                    <SummaryPill label="Active" value={orderMetrics.active} />
+                    <SummaryPill label="Completed" value={orderMetrics.completed} />
                   </div>
                 </div>
+                <div className="absolute -right-20 -bottom-20 h-64 w-64 rounded-full bg-[#ff9300]/10 blur-3xl"></div>
+              </section>
 
-                <div className="border-2 border-dashed border-slate-200 rounded-[2rem] p-10 flex flex-col items-center justify-center gap-3 bg-slate-50 hover:bg-orange-50/50 hover:border-[#ff9300]/30 transition-all cursor-pointer group">
-                  <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-300 group-hover:text-[#ff9300] transition-colors">
-                    <span className="material-symbols-outlined text-2xl">add_a_photo</span>
+              <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+                <div className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-headline text-xl font-extrabold tracking-tight">Popular Items</h3>
+                    <button onClick={() => navigate("/vendor/analytics")} className="text-sm font-bold text-[#ff9300]">
+                      Insights
+                    </button>
                   </div>
-                  <p className="text-[10px] font-black text-slate-400 group-hover:text-slate-600 uppercase tracking-widest">Upload Product Images</p>
+                  <div className="mt-4 space-y-3">
+                    {popularProducts.map((product, index) => (
+                      <div key={product.name} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                        <div>
+                          <p className="text-sm font-bold text-slate-900">{product.name}</p>
+                          <p className="text-xs text-slate-400">{product.units} items sold</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-black text-slate-900">{formatMoney(product.revenue)}</p>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-[#ff9300]">#{index + 1}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {!popularProducts.length && (
+                      <div className="rounded-2xl bg-slate-50 px-4 py-6 text-center text-sm text-slate-400">
+                        Popular items will appear once orders start coming in.
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <button 
-                  className="w-full py-5 rounded-2xl text-white font-black text-xs uppercase tracking-[0.25em] shadow-lg active:scale-[0.98] transition-all hover:brightness-105" 
-                  style={{ background: signatureGradient }}
-                >
-                  Publish Product
-                </button>
-              </div>
-            )}
+                <div className="rounded-[2rem] border border-slate-100 bg-slate-50 p-6 shadow-sm space-y-4">
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.25em] text-slate-400">Alerts</p>
+                    <h3 className="mt-2 font-headline text-xl font-extrabold tracking-tight">Store Watchlist</h3>
+                  </div>
+                  <AlertRow
+                    icon="warning"
+                    title="Low stock"
+                    description={`${analytics?.low_stock_count ?? inventoryStats.lowStockProducts} items need restocking soon.`}
+                  />
+                  <AlertRow
+                    icon="inventory"
+                    title="Out of stock"
+                    description={`${inventoryStats.outOfStockProducts} products are hidden from your storefront.`}
+                  />
+                  <AlertRow
+                    icon="support_agent"
+                    title="Complaints"
+                    description="No open customer complaints right now."
+                  />
+                </div>
+              </section>
+            </div>
+          )}
 
-            {/* Inventory Tab Content */}
-            {activeTab === 'inventory' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in duration-300">
-                {[1, 2, 3, 4].map((item) => (
-                  <div key={item} className="p-3 border border-slate-100 rounded-2xl bg-white shadow-sm flex gap-4 hover:border-orange-200 transition-colors">
-                    <div className="w-20 h-20 bg-slate-100 rounded-xl overflow-hidden shrink-0 border border-slate-100">
-                      <img src={`https://picsum.photos/seed/${item + 20}/200`} alt="Product" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex flex-col justify-center">
-                      <p className="text-xs font-black text-slate-800 leading-tight mb-1 font-headline">Kinetic Item {item}</p>
-                      <p className="text-sm font-bold text-[#ff9300]">R 12,500</p>
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                        <p className="text-[8px] font-black uppercase text-emerald-500 tracking-tighter">12 in stock</p>
-                      </div>
+          {(activeTab === "orders" || activeTab === "inventory") && (
+            <div className="space-y-3">
+              {(activeTab === "orders" ? orders : products).map((item) => (
+                <div key={item.id} className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                  <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                    <img
+                      alt={item.name || "item"}
+                      src={item.image_url || `https://picsum.photos/seed/${item.id}/200`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="truncate font-headline text-sm font-bold text-slate-900">
+                      {activeTab === "inventory" ? item.name : item.customer?.full_name}
+                    </h4>
+                    <p className="text-xs text-slate-400">
+                      {activeTab === "inventory"
+                        ? `${item.category} • ${item.stock_quantity ?? 0} in stock`
+                        : item.order_reference}
+                    </p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="text-sm font-black text-[#ff9300]">
+                        {formatMoney(activeTab === "inventory" ? item.price : item.total_amount)}
+                      </span>
+                      {activeTab === "inventory" && (
+                        <span className={`rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-widest ${(item.stock_quantity ?? 0) <= 0 ? "bg-red-100 text-red-600" : item.is_available ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                          {(item.stock_quantity ?? 0) <= 0 ? "Out" : item.is_available ? "Live" : "Hidden"}
+                        </span>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-
-            {/* Orders Tab Content */}
-            {activeTab === 'orders' && (
-              <div className="space-y-4 animate-in fade-in duration-300">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Order History</h3>
-                {[1, 2, 3, 4].map((_, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:shadow-md transition-all cursor-pointer">
-                    <div className="flex items-center gap-4">
-                      <div className="w-11 h-11 rounded-xl bg-white shadow-sm flex items-center justify-center text-emerald-600">
-                        <span className="material-symbols-outlined" style={materialIconFill}>check_circle</span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-800">Order #KN-928{i}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Completed • 4 items • R 8,500</p>
-                      </div>
-                    </div>
-                    <span className="material-symbols-outlined text-slate-300">chevron_right</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  <button
+                    onClick={() => navigate(activeTab === "inventory" ? "/vendor/upload-product" : "/vendor/orders")}
+                    className="rounded-xl bg-slate-900 p-2.5 text-white transition-transform active:scale-90"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">
+                      {activeTab === "inventory" ? "edit" : "local_shipping"}
+                    </span>
+                  </button>
+                </div>
+              ))}
+              {((activeTab === "orders" && !orders.length) || (activeTab === "inventory" && !products.length)) && (
+                <div className="rounded-2xl border border-dashed border-slate-200 py-12 text-center text-sm text-slate-400">
+                  No {activeTab} found.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
 
-      {/* --- Bottom Navigation (Mobile/Tablet Sticky) --- */}
-      <nav className="fixed bottom-0 w-full bg-white/90 backdrop-blur-2xl border-t border-slate-200 px-4 pt-4 pb-8 flex justify-around items-center z-50">
-        <button 
-          onClick={() => setActiveTab('overview')}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'overview' ? 'text-[#ff9300]' : 'text-slate-400'}`}
+      <nav className="fixed bottom-0 w-full z-50 bg-white/90 backdrop-blur-2xl border-t border-slate-100 shadow-[0_-8px_32px_rgba(0,0,0,0.05)] flex justify-around items-center px-4 pb-8 pt-2">
+        <NavButton icon="storefront" label="Shop" onClick={() => navigate("/vendor/dashboard")} />
+        <NavButton icon="shopping_bag" label="Orders" onClick={() => navigate("/vendor/orders")} />
+
+        <button
+          onClick={() => navigate("/vendor/upload-product")}
+          className="scale-110 -translate-y-4 rounded-full border-4 border-white bg-slate-900 p-4 text-white shadow-xl transition-all active:scale-90"
         >
-          <span className="material-symbols-outlined" style={activeTab === 'overview' ? materialIconFill : {}}>dashboard</span>
-          <span className="text-[8px] font-black uppercase tracking-tighter">Home</span>
+          <span className="material-symbols-outlined" style={materialIconFill}>add</span>
         </button>
-        <button 
-          onClick={() => setActiveTab('orders')}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'orders' ? 'text-[#ff9300]' : 'text-slate-400'}`}
-        >
-          <span className="material-symbols-outlined" style={activeTab === 'orders' ? materialIconFill : {}}>receipt_long</span>
-          <span className="text-[8px] font-black uppercase tracking-tighter">Orders</span>
-        </button>
-        <button 
-          onClick={() => setActiveTab('inventory')}
-          className={`flex flex-col items-center gap-1 transition-colors ${activeTab === 'inventory' ? 'text-[#ff9300]' : 'text-slate-400'}`}
-        >
-          <span className="material-symbols-outlined" style={activeTab === 'inventory' ? materialIconFill : {}}>inventory</span>
-          <span className="text-[8px] font-black uppercase tracking-tighter">Inventory</span>
-        </button>
-        <button 
-          className="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 transition-colors" 
-          onClick={() => navigate('/profile')}
-        >
-          <span className="material-symbols-outlined">storefront</span>
-          <span className="text-[8px] font-black uppercase tracking-tighter">Store</span>
-        </button>
+
+        <NavButton icon="analytics" label="Insights" onClick={() => navigate("/vendor/analytics")} />
+        <NavButton icon="person" label="Profile" onClick={() => navigate("/vendor/profile")} />
       </nav>
     </div>
   );
 };
+
+const MetricCard = ({ label, value, icon, tone }) => (
+  <div className={`space-y-4 rounded-2xl border p-5 shadow-sm ${tone === "orange" ? "border-orange-100 bg-orange-50" : "border-slate-100 bg-slate-50"}`}>
+    <div className={`flex h-10 w-10 items-center justify-center rounded-full ${tone === "orange" ? "bg-white text-[#ff9300]" : "bg-slate-200 text-slate-600"}`}>
+      <span className="material-symbols-outlined text-xl">{icon}</span>
+    </div>
+    <div>
+      <p className="font-label text-xs font-bold uppercase tracking-widest text-slate-400">{label}</p>
+      <p className="font-headline text-2xl font-bold text-slate-900">{value}</p>
+    </div>
+  </div>
+);
+
+const SummaryPill = ({ label, value }) => (
+  <div className="rounded-2xl bg-white/10 px-3 py-4">
+    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</p>
+    <p className="mt-2 text-2xl font-black text-white">{value}</p>
+  </div>
+);
+
+const AlertRow = ({ icon, title, description }) => (
+  <div className="rounded-2xl border border-slate-100 bg-white p-4">
+    <div className="flex items-center gap-3">
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+        <span className="material-symbols-outlined">{icon}</span>
+      </div>
+      <div>
+        <p className="text-sm font-bold text-slate-900">{title}</p>
+        <p className="text-xs font-medium text-slate-400">{description}</p>
+      </div>
+    </div>
+  </div>
+);
+
+const NavButton = ({ icon, label, active, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`flex flex-col items-center justify-center p-2 transition-all duration-300 ease-out active:scale-90 ${
+      active ? "text-[#ff9300]" : "text-slate-400 hover:text-slate-600"
+    }`}
+  >
+    <span className="material-symbols-outlined text-[26px]">{icon}</span>
+    <span className="mt-1 font-body text-[9px] font-bold uppercase tracking-widest">{label}</span>
+  </button>
+);

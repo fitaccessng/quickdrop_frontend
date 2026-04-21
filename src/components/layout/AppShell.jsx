@@ -1,10 +1,14 @@
+import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, useLocation } from "react-router-dom";
 
+import { useUiStore } from "../../store/uiStore";
 import { MobileTabBar } from "./MobileTabBar";
+import { RealtimeNotifications } from "./RealtimeNotifications";
 
 export const AppShell = () => {
   const location = useLocation();
+  const theme = useUiStore((state) => state.theme);
 
   const authPaths = [
     "/login",
@@ -23,8 +27,13 @@ export const AppShell = () => {
   const isHideNavPage = hideNavPaths.some((path) => location.pathname.startsWith(path));
   const shouldHideNav = isAuthPage || isHideNavPage;
 
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, [theme]);
+
   return (
     <div className="min-h-screen text-base-100">
+      <RealtimeNotifications />
       <main className="relative pb-28 md:pb-32">
         <AnimatePresence mode="wait">
           <motion.div

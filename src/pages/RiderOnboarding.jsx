@@ -1,211 +1,213 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { PageContainer } from '../components/common/PageContainer';
-import { SectionHeading } from '../components/common/SectionHeading';
-import { useAuthStore } from '../store/authStore';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { updateRiderProfile } from "../api/rider";
+import { useAuthStore } from "../store/authStore";
+
+const readFileAsDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 export const RiderOnboarding = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const setProfile = useAuthStore((state) => state.setProfile);
+  const clearSession = useAuthStore((state) => state.clearSession);
   const user = useAuthStore((state) => state.user);
   const [form, setForm] = useState({
-    city: '',
-    state: '',
-    street: '',
-    pobox: '',
-    profilePicture: null,
-    phone: user?.phone || '',
-    vehicleType: 'bike',
-    licenseNumber: '',
-    insurance: null,
+    phone: user?.phone || "",
+    city: user?.city || "",
+    state: user?.state || "",
+    street: user?.street || "",
+    po_box: user?.po_box || "",
+    vehicle_type: user?.vehicle_type || "bike",
+    license_number: user?.license_number || "",
+    rider_status: "available",
+    avatar_url: user?.avatar_url || "",
   });
-
-  const [previewImage, setPreviewImage] = useState(user?.avatar || null);
+  const [error, setError] = useState("");
 
   const mutation = useMutation({
-    mutationFn: async (data) => {
-      // TODO: Call API to register rider
-      console.log('Registering rider:', data);
-      return data;
+    mutationFn: updateRiderProfile,
+    onSuccess: (data) => {
+      setProfile(data);
+      queryClient.invalidateQueries({ queryKey: ["rider-profile"] });
+      navigate("/rider/dashboard");
     },
-    onSuccess: () => {
-      navigate('/ride');
+    onError: (err) => {
+      const statusCode = err.response?.status;
+      const detail = err.response?.data?.detail;
+
+      if (statusCode === 401) {
+        clearSession();
+        navigate("/rider/login", {
+          replace: true,
+          state: { message: "Your session expired. Please log in again." },
+        });
+        return;
+      }
+
+      if (Array.isArray(detail)) {
+        const message = detail
+          .map((item) => {
+            if (typeof item === "string") return item;
+            if (item?.msg) {
+              const field = Array.isArray(item.loc) ? item.loc[item.loc.length - 1] : "field";
+              return `${field}: ${item.msg}`;
+            }
+            return "Invalid input";
+          })
+          .join(", ");
+        setError(message || "Unable to complete onboarding.");
+        return;
+      }
+
+      setError(typeof detail === "string" ? detail : "Unable to complete onboarding.");
     },
   });
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result);
-        setForm((prev) => ({ ...prev, profilePicture: file }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const handleAvatarChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!form.city || !form.state || !form.street || !form.licenseNumber) {
-      alert('Please fill in all required fields');
-      return;
+    try {
+      const avatarUrl = await readFileAsDataUrl(file);
+      setForm((current) => ({ ...current, avatar_url: avatarUrl }));
+      setError("");
+    } catch {
+      setError("Unable to read the selected image. Please try another file.");
     }
-
-    mutation.mutate(form);
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f6f7] py-12 px-6">
-      <PageContainer className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-        <SectionHeading
-          eyebrow="Rider Onboarding"
-          title="Join Our Delivery Network"
-          description="Complete your profile to start earning by delivering orders."
-        />
-        
-        <form onSubmit={handleSubmit} className="rounded-[2rem] bg-white p-8 shadow-sm border border-slate-200/60 space-y-6">
-          
-          {/* Profile Picture */}
-          <div className="text-center">
-            <div className="w-24 h-24 mx-auto mb-4 rounded-2xl overflow-hidden border-4 border-emerald-100 flex items-center justify-center bg-slate-100">
-              {previewImage ? (
-                <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+    <main className="min-h-screen bg-[#f5f6f7] px-6 py-10">
+      <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="rounded-[2.5rem] bg-slate-900 p-8 text-white">
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff9300]">Rider Setup</p>
+          <h1 className="mt-4 font-headline text-4xl font-extrabold leading-tight">Finish your delivery profile.</h1>
+          <p className="mt-4 text-sm leading-relaxed text-slate-300">
+            Add your service area, delivery vehicle, and rider identity so dispatch can send you live orders.
+          </p>
+        </section>
+
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            setError("");
+            mutation.mutate(form);
+          }}
+          className="space-y-6 rounded-[3rem] border border-slate-100 bg-white p-10 shadow-2xl shadow-slate-200/50"
+        >
+          <div className="flex flex-col items-center gap-4 rounded-[2rem] bg-slate-50 p-6">
+            <div className="h-28 w-28 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+              {form.avatar_url ? (
+                <img src={form.avatar_url} alt="Rider profile preview" className="h-full w-full object-cover" />
               ) : (
-                <span className="material-symbols-outlined text-4xl text-slate-400">person</span>
+                <div className="flex h-full w-full items-center justify-center text-slate-300">
+                  <span className="material-symbols-outlined text-5xl">person</span>
+                </div>
               )}
             </div>
-            <label className="px-6 py-2 bg-emerald-50 text-emerald-600 font-bold text-sm rounded-xl border border-emerald-200 cursor-pointer hover:bg-emerald-100 transition-all inline-block">
-              Upload Picture
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={handleImageChange}
-                className="hidden"
-              />
+            <label className="cursor-pointer rounded-2xl bg-[#0A192F] px-5 py-3 text-xs font-black uppercase tracking-widest text-white transition-colors hover:bg-orange-600">
+              Upload Profile Picture
+              <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
             </label>
+            <p className="text-center text-xs text-slate-500">Choose a clear photo from your device.</p>
           </div>
 
-          {/* Phone Number */}
-          <div>
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-2">Phone Number</label>
-            <input 
-              type="tel" 
-              value={form.phone}
-              onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-slate-50"
-              placeholder="+254 700 000 000"
-              required
+          <div className="mb-4">
+            <h3 className="text-xl font-bold text-[#0A192F]">Rider Details</h3>
+            <p className="text-sm text-slate-500 font-light">Fill in your information to start your journey.</p>
+          </div>
+
+          <GridInput 
+            label="Phone Number" 
+            value={form.phone} 
+            onChange={(value) => setForm((current) => ({ ...current, phone: value }))} 
+          />
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <GridInput 
+              label="City" 
+              value={form.city} 
+              onChange={(value) => setForm((current) => ({ ...current, city: value }))} 
+            />
+            <GridInput 
+              label="State" 
+              value={form.state} 
+              onChange={(value) => setForm((current) => ({ ...current, state: value }))} 
             />
           </div>
 
-          {/* Location Information */}
-          <div className="space-y-4">
-            <h3 className="font-black text-slate-800 text-sm">Service Location</h3>
+          <GridInput 
+            label="Street Address" 
+            value={form.street} 
+            onChange={(value) => setForm((current) => ({ ...current, street: value }))} 
+          />
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-2">City</label>
-                <select 
-                  value={form.city}
-                  onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-slate-50"
-                  required
-                >
-                  <option value="">Select City</option>
-                  <option value="Nairobi">Nairobi</option>
-                  <option value="Mombasa">Mombasa</option>
-                  <option value="Kisumu">Kisumu</option>
-                  <option value="Nakuru">Nakuru</option>
-                  <option value="Eldoret">Eldoret</option>
-                  <option value="Thika">Thika</option>
-                </select>
-              </div>
+          <GridInput 
+            label="PO Box" 
+            required={false} 
+            value={form.po_box} 
+            onChange={(value) => setForm((current) => ({ ...current, po_box: value }))} 
+          />
 
-              <div>
-                <label className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-2">State/County</label>
-                <input 
-                  type="text" 
-                  value={form.state}
-                  onChange={(e) => setForm((prev) => ({ ...prev, state: e.target.value }))}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-slate-50"
-                  placeholder="e.g., Westlands"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-2">Street Address</label>
-              <input 
-                type="text" 
-                value={form.street}
-                onChange={(e) => setForm((prev) => ({ ...prev, street: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-slate-50"
-                placeholder="e.g., 123 Main Street"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-2">P.O. Box (Optional)</label>
-              <input 
-                type="text" 
-                value={form.pobox}
-                onChange={(e) => setForm((prev) => ({ ...prev, pobox: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-slate-50"
-                placeholder="P.O. Box (optional)"
-              />
-            </div>
-          </div>
-
-          {/* Vehicle Information */}
-          <div className="space-y-4">
-            <h3 className="font-black text-slate-800 text-sm">Vehicle Information</h3>
-
-            <div>
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-2">Vehicle Type</label>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Vehicle Type</label>
               <select 
-                value={form.vehicleType}
-                onChange={(e) => setForm((prev) => ({ ...prev, vehicleType: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-slate-50"
-                required
+                value={form.vehicle_type} 
+                onChange={(event) => setForm((current) => ({ ...current, vehicle_type: event.target.value }))} 
+                className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-black font-medium focus:border-orange-500 focus:bg-white focus:outline-none transition-all appearance-none cursor-pointer"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23000000'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1.25rem center', backgroundSize: '1.2rem' }}
               >
                 <option value="bike">Bike</option>
                 <option value="car">Car</option>
-                <option value="truck">Truck</option>
+                <option value="van">Van</option>
               </select>
             </div>
-
-            <div>
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-2">License Number</label>
-              <input 
-                type="text" 
-                value={form.licenseNumber}
-                onChange={(e) => setForm((prev) => ({ ...prev, licenseNumber: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-slate-50"
-                placeholder="e.g., KCA 123 ABC"
-                required
-              />
-            </div>
+            <GridInput 
+              label="License Number" 
+              value={form.license_number} 
+              onChange={(value) => setForm((current) => ({ ...current, license_number: value }))} 
+            />
           </div>
 
-          <button 
-            type="submit"
-            disabled={mutation.isPending}
-            className="w-full py-5 rounded-2xl bg-gradient-to-r from-[#ff9300] to-[#ffb857] text-white font-black text-sm uppercase tracking-widest active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg"
-          >
-            {mutation.isPending ? 'Registering...' : 'Complete Setup'}
-          </button>
-
-          {mutation.error && (
-            <div className="p-4 bg-error/10 border border-error rounded-xl">
-              <p className="text-sm text-error font-medium">An error occurred. Please try again.</p>
+          {error && (
+            <div className="flex items-center gap-3 rounded-2xl bg-red-50 p-4 text-sm font-medium text-red-600 border border-red-100">
+              <span>⚠️</span> {error}
             </div>
           )}
+
+          <button 
+            disabled={mutation.isPending} 
+            className="group relative w-full overflow-hidden rounded-[1.5rem] bg-[#0A192F] py-5 font-bold uppercase tracking-widest text-white transition-all hover:bg-orange-600 active:scale-[0.98] disabled:opacity-70"
+          >
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              {mutation.isPending ? "Saving Profile..." : "Complete Rider Setup"}
+            </span>
+          </button>
         </form>
-      </PageContainer>
-    </div>
+      </div>
+    </main>
   );
 };
+
+// UPDATED: GridInput now correctly applies text-black and accepts className
+const GridInput = ({ label, value, onChange, required = true, className = "" }) => (
+  <div className="space-y-2">
+    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">{label}</label>
+    <input
+      value={value}
+      required={required}
+      onChange={(event) => onChange(event.target.value)}
+      // Added text-black here. It also merges any className passed from the parent.
+      className={`w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-black font-medium focus:border-orange-500 focus:bg-white focus:outline-none transition-all ${className}`}
+    />
+  </div>
+);

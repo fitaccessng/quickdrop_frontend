@@ -7,7 +7,7 @@ export const RoleSelectionModal = ({ isOpen, onSelectRole, isLoading }) => {
 
   const roles = [
     {
-      id: 'user',
+      id: 'customer',
       title: 'Customer',
       description: 'Browse and order from vendors in your area',
       icon: 'shopping_cart',
@@ -19,13 +19,6 @@ export const RoleSelectionModal = ({ isOpen, onSelectRole, isLoading }) => {
       description: 'Sell your products and manage orders',
       icon: 'storefront',
       color: 'from-orange-400 to-orange-600',
-    },
-    {
-      id: 'rider',
-      title: 'Rider',
-      description: 'Earn by delivering orders',
-      icon: 'two_wheeler',
-      color: 'from-emerald-400 to-emerald-600',
     },
   ];
 

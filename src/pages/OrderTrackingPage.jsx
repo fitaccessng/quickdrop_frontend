@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { fetchOrderTracking } from "../api/orders";
+import { LiveRiderMap } from "../components/tracking/LiveRiderMap";
 
 export const OrderTrackingPage = () => {
   const { id } = useParams();
@@ -153,32 +154,15 @@ export const OrderTrackingPage = () => {
       </header>
 
       <main className="relative pt-16">
-        {/* Live Map Visualization */}
-        <section className="h-[40vh] w-full relative overflow-hidden bg-slate-200">
-          <img 
-            className="w-full h-full object-cover grayscale opacity-60" 
-            alt="City Map" 
-            src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=800&q=80"
-          />
-          {/* Kinetic Markers */}
-          <div className="absolute inset-0 pointer-events-none">
-            {/* User Destination */}
-            <div className="absolute top-1/4 right-1/3 flex flex-col items-center">
-              <div className="bg-white p-2 rounded-full shadow-lg border-2 border-rose-600">
-                <span className="material-symbols-outlined text-rose-600" style={materialIconFill}>person_pin_circle</span>
-              </div>
-            </div>
-            {/* Courier (Animated Pulse) */}
-            <div className="absolute bottom-1/4 left-1/4 flex flex-col items-center">
-              <div className="bg-rose-600 p-3 rounded-full shadow-[0_0_20px_rgba(225,29,72,0.4)] animate-bounce">
-                <span className="material-symbols-outlined text-white" style={materialIconFill}>pedal_bike</span>
-              </div>
-              <div className="mt-2 bg-white px-3 py-1 rounded-full shadow-sm">
-                <span className="text-[9px] font-black uppercase tracking-widest text-rose-600">Moving</span>
-              </div>
-            </div>
-          </div>
-        </section>
+        <LiveRiderMap
+          latitude={orderData?.tracking_latitude}
+          longitude={orderData?.tracking_longitude}
+          riderName={orderData?.rider?.full_name || orderData?.driver_name}
+          status={orderData?.status}
+          title={orderData?.vehicle_type ? "Ride Map" : (orderData?.order_reference || "Order map")}
+          subtitle={orderData?.vehicle_type ? "Ride tracking" : "Customer live map"}
+          heightClassName="h-[40vh]"
+        />
 
         {/* Status Sheet (Glassmorphism) */}
         <section className="relative -mt-10 px-5 z-10">
@@ -262,9 +246,13 @@ export const OrderTrackingPage = () => {
                     {orderData?.vehicle_type ? (
                       orderData?.driver_name ? orderData.driver_name : 'Finding Rider...'
                     ) : (
-                      orderData?.status === 'delivered' ? 'Delivery Completed' : 
-                      orderData?.status === 'on_the_way' ? 'Courier on the way' : 
-                      'Processing your order'
+                      orderData?.rider?.full_name
+                        ? orderData.rider.full_name
+                        : orderData?.status === 'delivered'
+                          ? 'Delivery Completed'
+                          : orderData?.status === 'on_the_way'
+                            ? 'Courier on the way'
+                            : 'Processing your order'
                     )}
                   </h3>
                   <div className="flex items-center gap-1">
@@ -308,10 +296,21 @@ export const OrderTrackingPage = () => {
             </div>
 
             {/* Help Button */}
-            <button className="w-full py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:text-rose-600 transition-colors">
-              Need help with this order?
-              <span className="material-symbols-outlined text-sm">arrow_forward_ios</span>
-            </button>
+            <div className="space-y-3">
+              {!orderData?.vehicle_type && orderData?.status === "on_the_way" && orderData?.rider?.id ? (
+                <Link
+                  to={`/tracking/${orderData.id}`}
+                  className="w-full py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:text-rose-600 transition-colors"
+                >
+                  Live rider tracking is active
+                  <span className="material-symbols-outlined text-sm">place_item</span>
+                </Link>
+              ) : null}
+              <button className="w-full py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:text-rose-600 transition-colors">
+                Need help with this order?
+                <span className="material-symbols-outlined text-sm">arrow_forward_ios</span>
+              </button>
+            </div>
           </div>
         </section>
       </main>
