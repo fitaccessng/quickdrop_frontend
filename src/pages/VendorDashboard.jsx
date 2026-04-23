@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import { fetchProducts } from "../api/products";
 import { fetchVendorAnalytics, fetchVendorOrders, fetchVendorProfile } from "../api/vendorPortal";
+import { QuickDropLogo } from "../components/branding/QuickDropLogo";
 import { formatMoney } from "../lib/utils";
 import { getInventoryStats, getOrderMetrics, getPopularProducts } from "../lib/vendorPortal";
 
@@ -42,9 +43,7 @@ export const VendorDashboard = () => {
     <div className="min-h-screen bg-white pt-20 font-body antialiased text-slate-900">
       <header className="fixed top-0 z-50 flex w-full items-center justify-between bg-white px-6 py-4">
         <div className="flex items-center gap-3">
-          <span className="font-headline text-xl font-extrabold tracking-tight text-slate-900">
-            QuickDrop
-          </span>
+          <QuickDropLogo size={40} showWordmark labelClassName="font-headline text-2xl font-bold text-slate-900" />
         </div>
         <div className="h-10 w-10 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
           <img

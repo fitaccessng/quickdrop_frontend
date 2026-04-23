@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchRiderDashboard } from "../api/rider";
+import { QuickDropLogo } from "../components/branding/QuickDropLogo";
 import { formatMoney } from "../lib/utils";
 
 export const RiderDashboardPage = () => {
@@ -19,8 +20,7 @@ export const RiderDashboardPage = () => {
       {/* Top Bar */}
       <header className="fixed top-0 w-full z-50 bg-[#f6f7f1]/80 backdrop-blur-xl flex justify-between items-center px-6 py-4 border-b border-slate-100">
         <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-[#4e6300]">location_on</span>
-          <span className="text-xl font-black text-[#4e6300] tracking-tight uppercase">Quickdrop Rider</span>
+          <QuickDropLogo size={40} showWordmark labelClassName="font-headline text-2xl font-bold text-[#4e6300]" />
         </div>
         <div className="flex items-center gap-4">
           <button className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm hover:opacity-80 transition-all active:scale-95">

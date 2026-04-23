@@ -23,8 +23,10 @@ export const UnifiedLoginPage = () => {
       // Route based on account type
       if (data.account_type === 'vendor') {
         navigate(data.user?.is_onboarded ? '/vendor/dashboard' : '/vendor/onboarding');
+      } else if (data.account_type === 'rider') {
+        navigate(data.user?.is_onboarded ? '/rider/dashboard' : '/rider/onboarding');
       } else {
-        navigate('/dashboard');
+        navigate(data.user?.is_onboarded ? '/dashboard' : '/onboarding');
       }
     },
     onError: (err) => {

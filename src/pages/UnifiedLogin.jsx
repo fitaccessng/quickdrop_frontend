@@ -30,7 +30,7 @@ export const UnifiedLogin = () => {
       } else if (data.account_type === 'rider') {
         navigate(data.user?.is_onboarded ? '/rider/dashboard' : '/rider/onboarding');
       } else {
-        navigate('/dashboard');
+        navigate(data.user?.is_onboarded ? '/dashboard' : '/onboarding');
       }
     },
     onError: (err) => {

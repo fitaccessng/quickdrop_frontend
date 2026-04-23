@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchProducts } from '../api/products';
 import { fetchVendors } from '../api/vendors';
 import { useCartStore } from '../store/cartStore';
+import { QuickDropLogo } from '../components/branding/QuickDropLogo';
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
@@ -106,8 +107,7 @@ export const DashboardPage = () => {
       <header className="bg-white/80 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-slate-100">
         <div className="flex justify-between items-center px-6 py-4 w-full">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-rose-600">location_on</span>
-            <span className="text-xl font-black text-slate-900 font-headline tracking-tight">QuickDrop</span>
+            <QuickDropLogo size={40} showWordmark labelClassName="font-headline text-2xl font-bold text-slate-900" />
           </div>
           <button className="relative w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 active:scale-90 transition-transform">
             <span className="material-symbols-outlined">notifications</span>

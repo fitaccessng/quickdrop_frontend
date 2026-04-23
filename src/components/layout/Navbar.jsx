@@ -5,8 +5,7 @@ import { useSessionBootstrap } from "../../hooks/useSessionBootstrap";
 import { formatMoney } from "../../lib/utils";
 import { useAuthStore } from "../../store/authStore";
 import { useCartStore } from "../../store/cartStore";
-// Import the image from your styles folder
-import quickdropLogo from "../../styles/quickdrop.jpeg";
+import { QuickDropLogo } from "../branding/QuickDropLogo";
 
 export const Navbar = () => {
   useSessionBootstrap();
@@ -22,12 +21,7 @@ export const Navbar = () => {
     <header className="fixed top-0 z-50 w-full border-b border-white/10 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link to="/" className="flex items-center gap-2 transition-transform hover:scale-[1.02]">
-          <img 
-  src="/styles/quickdrop.jpeg" 
-  alt="QuickDrop Logo" 
-  className="h-10 w-auto rounded-lg object-contain" 
-/>
-          <span className="text-xl font-bold tracking-tight text-slate-950">QuickDrop</span>
+          <QuickDropLogo size={40} showWordmark labelClassName="font-headline text-2xl font-bold text-slate-950" />
         </Link>
         
         <nav className="hidden items-center gap-8 md:flex">
@@ -49,7 +43,7 @@ export const Navbar = () => {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => navigate(accountType === "vendor" ? "/vendor/onboarding" : "/dashboard")}
+                onClick={() => navigate(accountType === "vendor" ? "/vendor/dashboard" : accountType === "rider" ? "/rider/dashboard" : "/dashboard")}
                 className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-slate-200 transition-colors"
               >
                 <User2 size={16} />
