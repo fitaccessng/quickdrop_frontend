@@ -1,151 +1,193 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { fetchProducts } from '../api/products';
 import { fetchServiceCategories } from '../api/system';
+import { useCartStore } from '../store/cartStore';
+import { QuickDropLogo } from '../components/branding/QuickDropLogo';
 
 const CATEGORY_ICONS = {
-  'Food & Beverages': 'restaurant',
-  Food: 'restaurant',
-  Grocery: 'shopping_basket',
-  Retail: 'shopping_bag',
-  Electronics: 'devices',
-  Fashion: 'checkroom',
-  Pharmacy: 'local_pharmacy',
-  Others: 'category',
+  'Food & Beverages': { icon: 'restaurant', color: 'text-rose-500', bg: 'bg-rose-50' },
+  Food: { icon: 'restaurant', color: 'text-rose-500', bg: 'bg-rose-50' },
+  Grocery: { icon: 'shopping_basket', color: 'text-amber-500', bg: 'bg-amber-50' },
+  Pharmacy: { icon: 'medical_services', color: 'text-emerald-500', bg: 'bg-emerald-50' },
+  Fashion: { icon: 'apparel', color: 'text-indigo-500', bg: 'bg-indigo-50' },
+  Electronics: { icon: 'devices', color: 'text-blue-500', bg: 'bg-blue-50' },
+  Retail: { icon: 'shopping_bag', color: 'text-slate-500', bg: 'bg-slate-50' },
+  Others: { icon: 'category', color: 'text-slate-500', bg: 'bg-slate-50' },
 };
-
-const BANNERS = [
-  { id: 1, title: "Fresh Flavors", sub: "Up to 20% off meals", color: "from-orange-500 to-red-600" },
-  { id: 2, title: "Quick Groceries", sub: "Delivery in 15 mins", color: "from-blue-600 to-indigo-700" },
-  { id: 3, title: "Tech Deals", sub: "Modern gadgets for you", color: "from-slate-800 to-black" },
-];
-
-const slugify = (value = '') =>
-  value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
 export const CategoriesPage = () => {
   const navigate = useNavigate();
+  const [currentBanner, setCurrentBanner] = useState(0);
+  const cartItems = useCartStore((state) => state.items);
+
+  const signatureGradient = "linear-gradient(135deg, #b61321 0%, #ff7670 100%)";
   const materialIconFill = { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" };
 
-  const { data: categoriesData } = useQuery({
+  const banners = [
+    { id: 1, title: "Summer Cravings", subtitle: "Up to 40% off", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80", color: "from-rose-600/80" },
+    { id: 2, title: "Fresh Groceries", subtitle: "15 min delivery", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80", color: "from-amber-600/80" },
+    { id: 3, title: "Tech & Style", subtitle: "Latest drops daily", image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80", color: "from-indigo-600/80" },
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentBanner((prev) => (prev + 1) % banners.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [banners.length]);
+
+  const { data: categories = [] } = useQuery({
     queryKey: ['service-categories'],
     queryFn: fetchServiceCategories,
   });
 
-  const { data: productsData } = useQuery({
-    queryKey: ['all-category-products'],
+  const { data: products = [] } = useQuery({
+    queryKey: ['all-products-count'],
     queryFn: () => fetchProducts({}),
   });
 
-  const products = productsData ?? [];
-  const categories = categoriesData ?? [];
-
   return (
-    <div className="min-h-screen bg-slate-50 font-body">
+    <div className="min-h-screen bg-slate-50 font-body text-slate-900 antialiased pb-20">
       {/* --- Premium Sticky Header --- */}
-      <header className="sticky top-0 z-50 bg-slate-950 px-6 py-5 flex items-center justify-between shadow-xl">
-        <button 
-          onClick={() => navigate(-1)}
-          className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/10 text-white active:scale-90 transition-transform"
-        >
-          <span className="material-symbols-outlined">arrow_back</span>
-        </button>
-        
-        <h1 className="text-white font-headline text-lg font-black tracking-tight uppercase italic">QuickDrop</h1>
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100">
+        <div className="flex justify-between items-center px-6 py-4">
+          <button 
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 active:scale-90 transition-transform"
+          >
+            <span className="material-symbols-outlined">arrow_back</span>
+          </button>
+          
+          <QuickDropLogo size={32} showWordmark labelClassName="font-headline text-xl font-bold text-slate-900" />
 
-        <button 
-          onClick={() => navigate('/cart')}
-          className="relative h-10 w-10 flex items-center justify-center rounded-xl bg-[#ff9300] text-white active:scale-90 transition-transform shadow-lg shadow-orange-500/20"
-        >
-          <span className="material-symbols-outlined">shopping_cart</span>
-          <span className="absolute -top-1 -right-1 bg-white text-slate-950 text-[10px] font-black h-4 w-4 rounded-full flex items-center justify-center border-2 border-orange-500">
-            2
-          </span>
-        </button>
+          <button 
+            onClick={() => navigate('/cart')}
+            className="relative w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 active:scale-90 transition-transform"
+          >
+            <span className="material-symbols-outlined">shopping_cart</span>
+            {cartItems.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-black h-5 w-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                {cartItems.length}
+              </span>
+            )}
+          </button>
+        </div>
       </header>
 
-      {/* --- Hero Banner Slider --- */}
-      <div className="px-6 py-6 overflow-x-auto no-scrollbar flex gap-4 snap-x">
-        {BANNERS.map((banner) => (
-          <div 
-            key={banner.id}
-            className={`min-w-[85%] sm:min-w-[400px] h-44 rounded-[2.5rem] bg-gradient-to-br ${banner.color} p-8 flex flex-col justify-end snap-center shadow-2xl relative overflow-hidden`}
-          >
-            <div className="absolute top-[-20%] right-[-10%] w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-            <h3 className="text-white text-2xl font-black leading-tight tracking-tight">{banner.title}</h3>
-            <p className="text-white/80 text-sm font-medium tracking-wide">{banner.sub}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* --- Category Horizontal Slider --- */}
-      <div className="mt-4">
-        <div className="px-6 flex items-center justify-between mb-4">
-          <h2 className="text-slate-900 font-black text-sm uppercase tracking-widest">Categories</h2>
-          <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Slide to browse</span>
-        </div>
-
-        <div className="px-6 pb-8 overflow-x-auto no-scrollbar flex gap-3">
-          {categories.map((category) => (
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              key={category.id || category.slug}
-              onClick={() => navigate(`/category/${category.slug}`)}
-              className="min-w-[110px] bg-white border border-slate-100 rounded-[2rem] p-5 flex flex-col items-center gap-3 shadow-sm"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-active:bg-orange-50">
-                <span className="material-symbols-outlined text-2xl" style={materialIconFill}>
-                  {CATEGORY_ICONS[category.name] || 'category'}
-                </span>
-              </div>
-              <p className="text-[11px] font-black text-slate-800 text-center uppercase tracking-tighter leading-none">
-                {category.name}
-              </p>
-            </motion.button>
-          ))}
-        </div>
-      </div>
-
-      {/* --- Detailed Bento Grid for Stats --- */}
-      <div className="px-6 grid grid-cols-2 gap-4 pb-12">
-        <div className="col-span-2 bg-slate-950 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl">
-          <div className="relative z-10">
-            <p className="text-orange-400 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Our Ecosystem</p>
-            <h2 className="text-3xl font-black tracking-tight leading-none mb-6">Explore <br/> Unlimited Drops</h2>
-            <div className="flex gap-10">
-              <div>
-                <p className="text-2xl font-black italic">{categories.length}</p>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Sectors</p>
-              </div>
-              <div>
-                <p className="text-2xl font-black italic">{products.length}</p>
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Live Items</p>
-              </div>
+      <main className="pt-4">
+        {/* --- Hero Banner Slider --- */}
+        <section className="px-6 mb-8">
+          <div className="relative h-48 w-full overflow-hidden rounded-[2.5rem] shadow-xl shadow-rose-900/5">
+            <AnimatePresence mode="wait">
+              {banners.map((banner, index) => index === currentBanner && (
+                <motion.div
+                  key={banner.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.6 }}
+                  className="absolute inset-0"
+                >
+                  <img src={banner.image} alt={banner.title} className="w-full h-full object-cover" />
+                  <div className={`absolute inset-0 bg-gradient-to-r ${banner.color} to-transparent flex flex-col justify-center px-8 text-white`}>
+                    <h2 className="text-2xl font-black font-headline mb-1">{banner.title}</h2>
+                    <p className="text-sm font-medium opacity-90">{banner.subtitle}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            
+            {/* Dot Indicators */}
+            <div className="absolute bottom-4 left-8 flex gap-2">
+              {banners.map((_, i) => (
+                <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentBanner ? 'w-6 bg-white' : 'w-1.5 bg-white/40'}`} />
+              ))}
             </div>
           </div>
-          {/* Abstract SVG Background */}
-          <div className="absolute top-0 right-0 opacity-10 pointer-events-none translate-x-10 -translate-y-10 scale-150">
-             <span className="material-symbols-outlined text-[200px]" style={materialIconFill}>dashboard</span>
+        </section>
+
+        {/* --- Category Horizontal Slider --- */}
+        <section className="mb-10">
+          <div className="px-6 flex justify-between items-end mb-6">
+            <div>
+              <h2 className="font-headline text-2xl font-black text-slate-900 tracking-tight leading-none">Departments</h2>
+              <p className="text-slate-400 text-xs font-bold mt-1 uppercase tracking-widest">Select to explore items</p>
+            </div>
           </div>
-        </div>
 
-        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 flex flex-col items-center justify-center text-center">
-            <span className="material-symbols-outlined text-orange-500 mb-2">auto_awesome</span>
-            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Average Density</p>
-            <p className="text-xl font-black text-slate-900 mt-1">
-               {categories.length > 0 ? (products.length / categories.length).toFixed(1) : 0}
-            </p>
-        </div>
+          <div className="px-6 flex overflow-x-auto no-scrollbar gap-4 snap-x">
+            {categories.map((category, i) => {
+              const theme = CATEGORY_ICONS[category.name] || CATEGORY_ICONS.Others;
+              const productCount = products.filter(p => p.category === category.name).length;
 
-        <div className="bg-white rounded-[2rem] p-6 border border-slate-100 flex flex-col items-center justify-center text-center">
-            <span className="material-symbols-outlined text-blue-500 mb-2">speed</span>
-            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Market Health</p>
-            <p className="text-xl font-black text-slate-900 mt-1">Optimal</p>
-        </div>
-      </div>
+              return (
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  key={category.id || i}
+                  onClick={() => navigate(`/category/${category.slug}`)}
+                  className="flex-shrink-0 w-32 snap-start flex flex-col items-center group"
+                >
+                  <div className={`${theme.bg} w-24 h-24 rounded-[2.5rem] flex items-center justify-center mb-3 group-hover:shadow-lg transition-all duration-300 shadow-sm border border-white`}>
+                    <span className={`material-symbols-outlined text-4xl ${theme.color}`} style={materialIconFill}>
+                      {theme.icon}
+                    </span>
+                  </div>
+                  <span className="font-black text-slate-900 text-[13px] uppercase tracking-tight text-center px-1">
+                    {category.name}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                    {productCount} Items
+                  </span>
+                </motion.button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* --- Premium Stats Bento Box --- */}
+        <section className="px-6 grid grid-cols-2 gap-4">
+          <div 
+            className="col-span-2 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl"
+            style={{ background: signatureGradient }}
+          >
+            <div className="relative z-10">
+              <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Global Access</p>
+              <h2 className="text-3xl font-black tracking-tight leading-tight mb-6">
+                Fresh drops <br/> across {categories.length} sectors.
+              </h2>
+              <div className="flex gap-10">
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex-1">
+                  <p className="text-2xl font-black italic">{products.length}</p>
+                  <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Live Inventory</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex-1">
+                  <p className="text-2xl font-black italic">SA</p>
+                  <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Market</p>
+                </div>
+              </div>
+            </div>
+            <div className="absolute top-0 right-0 opacity-10 pointer-events-none translate-x-1/4 -translate-y-1/4">
+               <span className="material-symbols-outlined text-[180px]">hub</span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[2rem] p-6 border border-slate-100 flex flex-col items-center justify-center text-center shadow-sm">
+              <span className="material-symbols-outlined text-rose-600 mb-2" style={materialIconFill}>bolt</span>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Speed</p>
+              <p className="text-lg font-black text-slate-900 mt-1 italic">Under 30m</p>
+          </div>
+
+          <div className="bg-white rounded-[2rem] p-6 border border-slate-100 flex flex-col items-center justify-center text-center shadow-sm">
+              <span className="material-symbols-outlined text-slate-800 mb-2" style={materialIconFill}>verified</span>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Quality</p>
+              <p className="text-lg font-black text-slate-900 mt-1 italic">Vetted</p>
+          </div>
+        </section>
+      </main>
 
       <style dangerouslySetInnerHTML={{ __html: `
         .no-scrollbar::-webkit-scrollbar { display: none; }
