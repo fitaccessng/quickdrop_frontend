@@ -8,7 +8,7 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import { QuickDropLogo } from "../components/branding/QuickDropLogo";
+import quickdropLogo from "../styles/quickdrop.jpeg";
 
 export const AboutPage = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -33,9 +33,18 @@ export const AboutPage = () => {
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <QuickDropLogo size={50} showWordmark labelClassName="font-headline text-2xl text-slate-900" />
-          </Link>
+        <Link to="/" className="flex items-center gap-2">
+  <img 
+    src={quickdropLogo} 
+    alt="QuickDrop" 
+    className="h-10 w-auto rounded-lg object-contain transition-transform hover:scale-105" 
+  />
+  <span className={`font-headline text-2xl font-bold tracking-tight ${
+    isScrolled ? "text-slate-900" : "text-white"
+  }`}>
+    QuickDrop
+  </span>
+</Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">

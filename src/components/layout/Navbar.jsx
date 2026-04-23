@@ -23,10 +23,10 @@ export const Navbar = () => {
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link to="/" className="flex items-center gap-2 transition-transform hover:scale-[1.02]">
           <img 
-            src={quickdropLogo} 
-            alt="QuickDrop Logo" 
-            className="h-10 w-auto rounded-lg object-contain" 
-          />
+  src="/styles/quickdrop.jpeg" 
+  alt="QuickDrop Logo" 
+  className="h-10 w-auto rounded-lg object-contain" 
+/>
           <span className="text-xl font-bold tracking-tight text-slate-950">QuickDrop</span>
         </Link>
         
