@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useAuthStore } from "../../store/authStore";
 import { useUiStore } from "../../store/uiStore";
+import { QuickDropLogo } from "../branding/QuickDropLogo";
 
 export const RiderShell = ({ title, subtitle, children, active = "dashboard", back = false }) => {
   const navigate = useNavigate();
@@ -45,10 +46,13 @@ export const RiderShell = ({ title, subtitle, children, active = "dashboard", ba
                 <span className="material-symbols-outlined text-lg">arrow_back_ios_new</span>
               </button>
             ) : null}
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff9300]">Rider Hub</p>
-              <h1 className="font-headline text-2xl font-extrabold tracking-tight">{title}</h1>
-              {subtitle ? <p className="text-sm text-slate-500">{subtitle}</p> : null}
+            <div className="flex items-center gap-3">
+              <QuickDropLogo size={44} />
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff9300]">Rider Hub</p>
+                <h1 className="font-headline text-2xl font-extrabold tracking-tight">{title}</h1>
+                {subtitle ? <p className="text-sm text-slate-500">{subtitle}</p> : null}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-2">

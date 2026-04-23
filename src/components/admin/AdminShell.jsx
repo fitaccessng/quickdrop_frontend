@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { useUiStore } from "../../store/uiStore";
+import { QuickDropLogo } from "../branding/QuickDropLogo";
 
 const items = [
   { to: "/admin/dashboard", label: "Dashboard", icon: "dashboard" },
@@ -24,7 +25,9 @@ export const AdminShell = ({ title, subtitle, children }) => {
       <div className="mx-auto grid max-w-7xl gap-6 px-5 py-5 lg:grid-cols-[250px_1fr]">
         <aside className={`rounded-[2rem] p-5 shadow-xl ${theme === "dark" ? "bg-slate-900 text-white" : "bg-slate-900 text-white"}`}>
           <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff9300]">Admin Console</p>
-          <h1 className="mt-3 font-headline text-2xl font-extrabold">QuickDrop Control</h1>
+          <div className="mt-3">
+            <QuickDropLogo size={52} showWordmark label="QuickDrop Control" labelClassName="font-headline text-2xl text-white" />
+          </div>
           <button onClick={toggleTheme} className="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-xs font-black uppercase tracking-widest text-white">
             {theme === "dark" ? "Light mode" : "Dark mode"}
           </button>

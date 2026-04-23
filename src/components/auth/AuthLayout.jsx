@@ -1,4 +1,5 @@
 import React from 'react';
+import { QuickDropLogo } from "../branding/QuickDropLogo";
 
 export const AuthLayout = ({ children, title, subtitle, variant = "customer" }) => {
   return (
@@ -13,11 +14,8 @@ export const AuthLayout = ({ children, title, subtitle, variant = "customer" }) 
         {/* Branding/Visual Side */}
         <div className="hidden md:flex relative bg-surface-container-low p-12 flex-col justify-between">
           <div className="z-10">
-            <div className="flex items-center gap-2 mb-12">
-              <span className="material-symbols-outlined text-primary text-3xl font-black" style={{ fontVariationSettings: "'FILL' 1" }}>
-                electric_bolt
-              </span>
-              <span className="font-headline font-black text-2xl tracking-tighter text-on-surface">QuickDrop</span>
+            <div className="mb-12">
+              <QuickDropLogo size={56} showWordmark labelClassName="font-headline text-2xl text-on-surface" />
             </div>
             <h1 className="font-headline text-5xl font-extrabold text-on-surface leading-[1.1] mb-6">
               Deliver <br />
@@ -46,11 +44,8 @@ export const AuthLayout = ({ children, title, subtitle, variant = "customer" }) 
 
         {/* Form Side */}
         <div className="p-8 md:p-16 lg:p-20 flex flex-col justify-center">
-          <div className="md:hidden flex items-center gap-2 mb-12 justify-center">
-            <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-              electric_bolt
-            </span>
-            <span className="font-headline font-black text-2xl tracking-tighter text-on-surface">QuickDrop</span>
+          <div className="md:hidden mb-12 flex justify-center">
+            <QuickDropLogo size={52} showWordmark labelClassName="font-headline text-2xl text-on-surface" />
           </div>
 
           <div className="mb-10 text-center md:text-left">

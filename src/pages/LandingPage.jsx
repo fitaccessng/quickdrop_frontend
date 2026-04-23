@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchVendors } from "../api/vendors";
 import { MapPin, Search, Menu, X } from 'lucide-react';
+import { QuickDropLogo } from "../components/branding/QuickDropLogo";
 
 export const LandingPage = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -34,12 +35,11 @@ export const LandingPage = () => {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <span className={`material-symbols-outlined text-4xl ${isScrolled ? "text-[#ff9300]" : "text-white"}`}>
-              rocket_launch
-            </span>
-            <span className={`text-2xl font-extrabold font-headline tracking-tight ${isScrolled ? "text-slate-900" : "text-white"}`}>
-              Quick Drop
-            </span>
+            <QuickDropLogo
+              size={50}
+              showWordmark
+              labelClassName={isScrolled ? "font-headline text-2xl text-slate-900" : "font-headline text-2xl text-white"}
+            />
           </Link>
 
           {/* Desktop Navigation */}

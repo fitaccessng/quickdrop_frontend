@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { QuickDropLogo } from "../branding/QuickDropLogo";
 
 const navItems = [
   { to: "/vendor/dashboard", icon: "space_dashboard", label: "Dashboard" },
@@ -27,11 +28,14 @@ export const VendorPortalLayout = ({ title, eyebrow, subtitle, avatarUrl, childr
             >
               <span className="material-symbols-outlined">arrow_back</span>
             </button>
-            <div className="min-w-0">
-              <p className="truncate text-[10px] font-black uppercase tracking-[0.28em] text-[#ff9300]">{eyebrow}</p>
-              <h1 className="truncate font-headline text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
-                {title}
-              </h1>
+            <div className="flex min-w-0 items-center gap-3">
+              <QuickDropLogo size={44} />
+              <div className="min-w-0">
+                <p className="truncate text-[10px] font-black uppercase tracking-[0.28em] text-[#ff9300]">{eyebrow}</p>
+                <h1 className="truncate font-headline text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+                  {title}
+                </h1>
+              </div>
             </div>
           </div>
 

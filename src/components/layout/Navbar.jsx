@@ -5,6 +5,7 @@ import { useSessionBootstrap } from "../../hooks/useSessionBootstrap";
 import { formatMoney } from "../../lib/utils";
 import { useAuthStore } from "../../store/authStore";
 import { useCartStore } from "../../store/cartStore";
+import { QuickDropLogo } from "../branding/QuickDropLogo";
 
 export const Navbar = () => {
   useSessionBootstrap();
@@ -19,8 +20,8 @@ export const Navbar = () => {
   return (
     <header className="fixed top-0 z-50 w-full border-b border-white/10 bg-white backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link to="/" className="text-xl font-extrabold tracking-tight text-black hover:text-white">
-          QuickDrop
+        <Link to="/" className="transition-transform hover:scale-[1.01]">
+          <QuickDropLogo size={46} showWordmark labelClassName="text-slate-950" />
         </Link>
         <nav className="hidden items-center gap-6 md:flex">
           <NavLink to="/" className="text-sm text-black hover:text-blue">Home</NavLink>
