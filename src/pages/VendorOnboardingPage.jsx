@@ -1,31 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
-
 import { completeVendorOnboarding } from "../api/auth";
-import { BottomSheetModal } from "../components/common/BottomSheetModal";
 import { fetchServiceCategories } from "../api/system";
 import { useAuthStore } from "../store/authStore";
 import { isFoodCategory } from "../lib/vendorPortal";
+import quickdropLogo from "../styles/quickdrop.jpeg";
 
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const SOUTH_AFRICAN_CITIES = [
-  "Johannesburg",
-  "Cape Town",
-  "Durban",
-  "Pretoria",
-  "Soweto",
-  "Sandton",
-  "Centurion",
-  "Midrand",
-  "Bloemfontein",
-  "Port Elizabeth",
-  "East London",
-  "Polokwane",
-  "Nelspruit",
-  "Kimberley",
-  "Rustenburg",
-  "Pietermaritzburg",
+  "Johannesburg", "Cape Town", "Durban", "Pretoria", "Soweto", "Sandton", "Centurion", 
+  "Midrand", "Bloemfontein", "Port Elizabeth", "East London", "Polokwane", "Nelspruit", 
+  "Kimberley", "Rustenburg", "Pietermaritzburg",
 ];
 
 const buildDefaultHours = () => ({
@@ -46,39 +32,6 @@ export const VendorOnboardingPage = () => {
   const hasHydrated = useAuthStore((state) => state._hasHydrated);
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
-
-  useEffect(() => {
-    if (!token && hasHydrated) {
-      navigate("/vendor/login");
-      return;
-    }
-    setIsHydrated(true);
-    
-    // Get user's location on component mount
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setForm((prev) => ({
-            ...prev,
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          }));
-        },
-        (error) => {
-          console.warn("Geolocation error:", error.message);
-        }
-      );
-    }
-  }, [hasHydrated, token, navigate]);
-
-  const signatureGradient = "linear-gradient(135deg, #ff9300 0%, #ffb857 100%)";
-  const materialIconFill = { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" };
-  const categoryLooksLikeFood = isFoodCategory(user?.category);
-  const categoriesQuery = useQuery({
-    queryKey: ["service-categories"],
-    queryFn: fetchServiceCategories,
-  });
-  const categoryOptions = categoriesQuery.data?.map((item) => item.name) ?? [];
 
   const [form, setForm] = useState({
     description: "",
@@ -106,11 +59,37 @@ export const VendorOnboardingPage = () => {
     support_phone: user?.phone || "",
   });
 
+  useEffect(() => {
+    if (!token && hasHydrated) {
+      navigate("/vendor/login");
+      return;
+    }
+    setIsHydrated(true);
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setForm((prev) => ({
+            ...prev,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          }));
+        },
+        (error) => console.warn("Geolocation error:", error.message)
+      );
+    }
+  }, [hasHydrated, token, navigate]);
+
+  const categoriesQuery = useQuery({
+    queryKey: ["service-categories"],
+    queryFn: fetchServiceCategories,
+  });
+  const categoryOptions = categoriesQuery.data?.map((item) => item.name) ?? [];
+  const categoryLooksLikeFood = isFoodCategory(user?.category);
+
   const mutation = useMutation({
     mutationFn: completeVendorOnboarding,
-    onSuccess: () => {
-      navigate("/vendor/dashboard");
-    },
+    onSuccess: () => navigate("/vendor/dashboard"),
     onError: (error) => {
       const errorData = error.response?.data?.detail;
       if (Array.isArray(errorData)) {
@@ -126,571 +105,218 @@ export const VendorOnboardingPage = () => {
     },
   });
 
-  const handleHourChange = (day, field, value) => {
-    setForm((prev) => ({
-      ...prev,
-      opening_hours: {
-        ...prev.opening_hours,
-        [day]: {
-          ...prev.opening_hours[day],
-          [field]: value,
-        },
-      },
-    }));
-  };
-
-  const toggleDayOff = (day) => {
-    setForm((prev) => ({
-      ...prev,
-      opening_hours: {
-        ...prev.opening_hours,
-        [day]: {
-          ...prev.opening_hours[day],
-          closed: !prev.opening_hours[day].closed,
-        },
-      },
-    }));
-  };
-
-  const handlePermitChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setForm((prev) => ({ ...prev, permit_url: file.name }));
-    }
-  };
-
-  const validateStep = () => {
-    if (currentStep === 1) {
-      if (!form.description.trim() || form.description.length < 10) {
-        setErrors({ description: "Description must be at least 10 characters" });
-        return false;
-      }
-      if (!form.category.trim()) {
-        setErrors({ category: "Business category is required" });
-        return false;
-      }
-      if (!form.street.trim()) {
-        setErrors({ street: "Street address is required" });
-        return false;
-      }
-      if (!form.city.trim()) {
-        setErrors({ city: "City is required" });
-        return false;
-      }
-    }
-
-    if (currentStep === 2) {
-      if (!form.south_african_id_number.trim() || !form.business_registration_number.trim() || !form.tin.trim()) {
-        setErrors({ general: "South African ID, business registration, and tax/VAT details are required." });
-        return false;
-      }
-    }
-
-    if (currentStep === 3) {
-      if (!form.bank_name.trim() || !form.bank_account_name.trim() || !form.bank_account.trim()) {
-        setErrors({ general: "Complete bank payout details before continuing." });
-        return false;
-      }
-    }
-
-    return true;
-  };
-
   const handleNext = () => {
-    setErrors({});
-    if (!validateStep()) return;
-
     if (currentStep < 4) {
-      setCurrentStep((prev) => prev + 1);
-      return;
+      setCurrentStep(prev => prev + 1);
+      window.scrollTo(0, 0);
+    } else {
+      mutation.mutate(form);
     }
-
-    const currentToken = useAuthStore.getState().token;
-    if (!currentToken) {
-      setErrors({ general: "Authentication lost. Please log in again." });
-      navigate("/vendor/login");
-      return;
-    }
-
-    const payload = {
-      description: form.description,
-      category: form.category,
-      street: form.street,
-      po_box: form.po_box || null,
-      city: form.city,
-      latitude: form.latitude,
-      longitude: form.longitude,
-      opening_hours: form.opening_hours,
-      permit_url: form.permit_url,
-      tin: form.tin,
-      business_registration_number: form.business_registration_number,
-      vat_number: form.vat_number,
-      south_african_id_number: form.south_african_id_number,
-      bank_name: form.bank_name,
-      bank_account_name: form.bank_account_name,
-      bank_account: form.bank_account,
-      prep_time_minutes: Number(form.prep_time_minutes),
-      minimum_order_amount: parseFloat(form.minimum_order_amount),
-      delivery_radius_km: parseFloat(form.delivery_radius_km),
-      auto_accept_orders: form.auto_accept_orders,
-      notifications_enabled: form.notifications_enabled,
-      support_email: form.support_email,
-      support_phone: form.support_phone,
-    };
-
-    mutation.mutate(payload);
   };
 
-  if (!isHydrated) {
-    return (
-      <div className="bg-[#f5f6f7] min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-[#ff9300] mx-auto mb-4"></div>
-          <p className="text-sm font-bold text-slate-600">Loading your store setup...</p>
-        </div>
-      </div>
-    );
-  }
+  if (!isHydrated) return null;
 
   return (
-    <BottomSheetModal
-      eyebrow="Vendor Setup"
-      title="Launch your storefront"
-      subtitle="Your vendor onboarding now lives in a responsive bottom sheet so the whole setup flow feels native on mobile and remains easy to scan on desktop."
-      onClose={() => navigate(-1)}
-      className="max-w-3xl"
-    >
-      <div className="mx-auto max-w-2xl">
-        <div className="mb-8 flex items-center justify-between">
-          <button
-            onClick={() => (currentStep > 1 ? setCurrentStep((prev) => prev - 1) : navigate(-1))}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 transition-all active:scale-90"
-          >
-            <span className="material-symbols-outlined text-slate-400">arrow_back</span>
-          </button>
-
-          <div className="flex gap-2">
-            {[1, 2, 3, 4].map((step) => (
-              <div
-                key={step}
-                className={`h-1.5 rounded-full transition-all duration-500 ${currentStep >= step ? "w-8" : "w-2 bg-slate-100"}`}
-                style={{ background: currentStep >= step ? signatureGradient : "" }}
-              />
-            ))}
-          </div>
-
-          <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-            {currentStep}/4
-          </span>
+    <div className="min-h-screen bg-slate-950 flex flex-col font-body">
+      {/* --- Branding & Progress Header --- */}
+      <div className="pt-10 pb-8 px-6 flex flex-col items-center text-center">
+        <img src={quickdropLogo} alt="QuickDrop" className="h-12 w-12 rounded-xl mb-4 border border-white/10" />
+        <h1 className="text-white font-headline text-2xl font-black tracking-tight">
+          {currentStep === 1 && "Store Info"}
+          {currentStep === 2 && "Compliance"}
+          {currentStep === 3 && "Bank Payouts"}
+          {currentStep === 4 && "Operations"}
+        </h1>
+        
+        {/* Progress Bar */}
+        <div className="flex gap-2 mt-4 w-32">
+          {[1, 2, 3, 4].map((step) => (
+            <div 
+              key={step} 
+              className={`h-1 flex-1 rounded-full transition-all duration-500 ${currentStep >= step ? "bg-[#ff9300]" : "bg-slate-800"}`} 
+            />
+          ))}
         </div>
+      </div>
 
-        <div className="animate-in fade-in slide-in-from-top-4 duration-500">
-          <h1 className="text-2xl font-black tracking-tight">
-            {currentStep === 1 && "Store Setup"}
-            {currentStep === 2 && "Compliance Upload"}
-            {currentStep === 3 && "Bank Details"}
-            {currentStep === 4 && "Store Settings"}
-          </h1>
-          <p className="text-sm font-bold text-slate-400 mt-1">
-            {currentStep === 1 && "Set up your store information and operating hours."}
-            {currentStep === 2 && "Add South Africa specific KYC, business registration, and VAT details."}
-            {currentStep === 3 && "Tell us where payouts should be sent."}
-            {currentStep === 4 && "Finish support, delivery, and operational preferences."}
-          </p>
-        </div>
-
-        <div className="mt-6 space-y-6 pb-4">
-          <div className="space-y-8 rounded-[2rem] border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50 sm:rounded-[2.5rem] sm:p-8">
-          {currentStep === 1 && (
-            <>
-              <IconBlock icon="storefront" materialIconFill={materialIconFill} />
-
-                <Field label="Store Description" error={errors.description}>
-                  <textarea
-                  value={form.description}
-                  onChange={(e) => {
-                    setForm((prev) => ({ ...prev, description: e.target.value }));
-                    setErrors((prev) => ({ ...prev, description: "" }));
-                  }}
-                  className={`w-full bg-slate-50 border rounded-2xl p-4 text-sm font-bold focus:outline-none h-32 resize-none transition-all placeholder:text-slate-300 ${
-                    errors.description ? "border-red-400 focus:ring-2 focus:ring-red-400" : "border-slate-100 focus:border-[#ff9300]"
-                  }`}
-                  placeholder="What do you sell? Describe your store..."
-                />
-              </Field>
-
-              <Field label="Business Category" error={errors.category}>
-                <select
-                  value={form.category}
-                  onChange={(e) => {
-                    setForm((prev) => ({ ...prev, category: e.target.value }));
-                    setErrors((prev) => ({ ...prev, category: "" }));
-                  }}
-                  className={`w-full bg-slate-50 border rounded-2xl p-4 text-sm font-bold focus:outline-none transition-all placeholder:text-slate-300 ${
-                    errors.category ? "border-red-400 focus:ring-2 focus:ring-red-400" : "border-slate-100 focus:border-[#ff9300]"
-                  }`}
-                >
-                  <option value="">Select a category</option>
-                  {categoryOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <div className="space-y-4">
-                <h3 className="text-sm font-black text-slate-800">📍 Business Location</h3>
-                
-                <Field label="Street Address" error={errors.street}>
-                  <input
-                    type="text"
-                    value={form.street}
-                    onChange={(e) => {
-                      setForm((prev) => ({ ...prev, street: e.target.value }));
-                      setErrors((prev) => ({ ...prev, street: "" }));
-                    }}
-                    className={`w-full bg-slate-50 border rounded-2xl p-4 text-sm font-bold focus:outline-none transition-all placeholder:text-slate-300 ${
-                      errors.street ? "border-red-400 focus:ring-2 focus:ring-red-400" : "border-slate-100 focus:border-[#ff9300]"
-                    }`}
-                    placeholder="123 Main Street..."
-                  />
-                </Field>
-
-                <Field label="PO Box (Optional)" error={errors.po_box}>
-                  <input
-                    type="text"
-                    value={form.po_box}
-                    onChange={(e) => setForm((prev) => ({ ...prev, po_box: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:outline-none focus:border-[#ff9300] transition-all placeholder:text-slate-300"
-                    placeholder="PO Box 123..."
-                  />
-                </Field>
-
-                <Field label="Country">
-                  <input
-                    type="text"
-                    value="South Africa"
-                    readOnly
-                    className="w-full bg-slate-100 border border-slate-100 rounded-2xl p-4 text-sm font-bold text-slate-500"
-                  />
-                </Field>
-
-                <Field label="City" error={errors.city}>
-                  <select
-                    value={form.city}
-                    onChange={(e) => {
-                      setForm((prev) => ({ ...prev, city: e.target.value }));
-                      setErrors((prev) => ({ ...prev, city: "" }));
-                    }}
-                    className={`w-full bg-slate-50 border rounded-2xl p-4 text-sm font-bold focus:outline-none transition-all placeholder:text-slate-300 ${
-                      errors.city ? "border-red-400 focus:ring-2 focus:ring-red-400" : "border-slate-100 focus:border-[#ff9300]"
-                    }`}
-                  >
-                    <option value="">Select a city</option>
-                    {SOUTH_AFRICAN_CITIES.map((city) => (
-                      <option key={city} value={city}>
-                        {city}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-
-                {form.latitude && form.longitude && (
-                  <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
-                    <p className="text-xs font-bold text-green-700">✓ Location captured: {form.latitude.toFixed(4)}, {form.longitude.toFixed(4)}</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-sm font-black text-slate-800">Operating Hours</h3>
-                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
-                  {daysOfWeek.map((day) => (
-                    <div key={day} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                      <div className="flex-1">
-                        <p className="text-xs font-bold text-slate-600">{day}</p>
-                      </div>
-
-                      {form.opening_hours[day].closed ? (
-                        <span className="text-xs font-bold text-red-500">Closed</span>
-                      ) : (
-                        <div className="flex gap-2 items-center">
-                          <input
-                            type="time"
-                            value={form.opening_hours[day].open}
-                            onChange={(e) => handleHourChange(day, "open", e.target.value)}
-                            className="bg-white px-2 py-1 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff9300]"
-                          />
-                          <span className="text-xs text-slate-400">-</span>
-                          <input
-                            type="time"
-                            value={form.opening_hours[day].close}
-                            onChange={(e) => handleHourChange(day, "close", e.target.value)}
-                            className="bg-white px-2 py-1 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff9300]"
-                          />
-                        </div>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => toggleDayOff(day)}
-                        className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
-                          form.opening_hours[day].closed ? "bg-red-100 text-red-600" : "bg-slate-200 text-slate-600 hover:bg-slate-300"
-                        }`}
-                      >
-                        {form.opening_hours[day].closed ? "Off" : "On"}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {currentStep === 2 && (
-            <>
-              <IconBlock icon="verified_user" materialIconFill={materialIconFill} />
-
-              <Field label="Business ID / Permit">
-                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-10 flex flex-col items-center justify-center gap-3 bg-slate-50 hover:bg-orange-50/50 hover:border-[#ff9300]/30 transition-all cursor-pointer group">
-                  <input
-                    type="file"
-                    onChange={handlePermitChange}
-                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                    className="hidden"
-                    id="permit-upload"
-                  />
-                  <label htmlFor="permit-upload" className="flex flex-col items-center justify-center gap-3 w-full cursor-pointer">
-                    <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-400 group-hover:text-[#ff9300] transition-colors">
-                      <span className="material-symbols-outlined">cloud_upload</span>
-                    </div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">
-                      {form.permit_url ? form.permit_url : "Click to upload document"}
-                    </span>
-                  </label>
-                </div>
-              </Field>
-
-              <div className="grid grid-cols-1 gap-4">
-                <Field label="South African ID Number">
-                  <input
-                    type="text"
-                    value={form.south_african_id_number}
-                    onChange={(e) => setForm((prev) => ({ ...prev, south_african_id_number: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#ff9300] outline-none transition-all placeholder:text-slate-300"
-                    placeholder="e.g. 9001015800088"
-                  />
-                </Field>
-
-                <Field label="Business Registration Number">
-                  <input
-                    type="text"
-                    value={form.business_registration_number}
-                    onChange={(e) => setForm((prev) => ({ ...prev, business_registration_number: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#ff9300] outline-none transition-all placeholder:text-slate-300"
-                    placeholder="e.g. 2024/123456/07"
-                  />
-                </Field>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Field label="Tax Number / TIN">
-                    <input
-                      type="text"
-                      value={form.tin}
-                      onChange={(e) => setForm((prev) => ({ ...prev, tin: e.target.value }))}
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#ff9300] outline-none transition-all placeholder:text-slate-300"
-                      placeholder="Tax number"
-                    />
-                  </Field>
-
-                  <Field label="VAT Number">
-                    <input
-                      type="text"
-                      value={form.vat_number}
-                      onChange={(e) => setForm((prev) => ({ ...prev, vat_number: e.target.value }))}
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#ff9300] outline-none transition-all placeholder:text-slate-300"
-                      placeholder="VAT"
-                    />
-                  </Field>
-                </div>
-              </div>
-            </>
-          )}
-
-          {currentStep === 3 && (
-            <>
-              <IconBlock icon="account_balance" materialIconFill={materialIconFill} />
-
-              <div className="grid grid-cols-1 gap-4">
-                <Field label="Bank Name">
-                  <input
-                    type="text"
-                    value={form.bank_name}
-                    onChange={(e) => setForm((prev) => ({ ...prev, bank_name: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#ff9300] outline-none transition-all placeholder:text-slate-300"
-                    placeholder="e.g. Standard Bank"
-                  />
-                </Field>
-
-                <Field label="Account Name">
-                  <input
-                    type="text"
-                    value={form.bank_account_name}
-                    onChange={(e) => setForm((prev) => ({ ...prev, bank_account_name: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#ff9300] outline-none transition-all placeholder:text-slate-300"
-                    placeholder="Registered business account name"
-                  />
-                </Field>
-
-                <Field label="Account Number">
-                  <input
-                    type="text"
-                    value={form.bank_account}
-                    onChange={(e) => setForm((prev) => ({ ...prev, bank_account: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#ff9300] outline-none transition-all placeholder:text-slate-300"
-                    placeholder="0000000000"
-                  />
-                </Field>
-              </div>
-            </>
-          )}
-
-          {currentStep === 4 && (
-            <>
-              <IconBlock icon="tune" materialIconFill={materialIconFill} />
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {categoryLooksLikeFood && (
-                  <Field label="Prep Time (min)">
-                    <input
-                      type="number"
-                      value={form.prep_time_minutes}
-                      onChange={(e) => setForm((prev) => ({ ...prev, prep_time_minutes: e.target.value }))}
-                      className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#ff9300] outline-none transition-all"
-                      min="1"
-                      max="240"
-                    />
-                  </Field>
-                )}
-
-                <Field label="Min Order (R)">
-                  <input
-                    type="number"
-                    value={form.minimum_order_amount}
-                    onChange={(e) => setForm((prev) => ({ ...prev, minimum_order_amount: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#ff9300] outline-none transition-all"
-                    min="0"
-                    step="50"
-                  />
-                </Field>
-
-                <Field label="Delivery Radius (km)">
-                  <input
-                    type="number"
-                    value={form.delivery_radius_km}
-                    onChange={(e) => setForm((prev) => ({ ...prev, delivery_radius_km: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#ff9300] outline-none transition-all"
-                    min="0"
-                    step="1"
-                  />
-                </Field>
-
-                <Field label="Support Email">
-                  <input
-                    type="email"
-                    value={form.support_email}
-                    onChange={(e) => setForm((prev) => ({ ...prev, support_email: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#ff9300] outline-none transition-all"
-                    placeholder="support@yourstore.co.za"
-                  />
-                </Field>
-
-                <Field label="Support Phone">
-                  <input
-                    type="text"
-                    value={form.support_phone}
-                    onChange={(e) => setForm((prev) => ({ ...prev, support_phone: e.target.value }))}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-2xl p-4 text-sm font-bold focus:border-[#ff9300] outline-none transition-all"
-                    placeholder="+27..."
-                  />
-                </Field>
-              </div>
-
-              <ToggleRow
-                label="Auto-accept incoming orders"
-                checked={form.auto_accept_orders}
-                onChange={(checked) => setForm((prev) => ({ ...prev, auto_accept_orders: checked }))}
-              />
-              <ToggleRow
-                label="Enable vendor notifications"
-                checked={form.notifications_enabled}
-                onChange={(checked) => setForm((prev) => ({ ...prev, notifications_enabled: checked }))}
-              />
-            </>
-          )}
-          </div>
+      {/* --- Main Sheet Container --- */}
+      <div className="flex-1 bg-white rounded-t-[3.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.4)] px-6 pt-8 pb-12 overflow-y-auto">
+        <div className="max-w-md mx-auto">
+          <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8 -mt-2" />
 
           {errors.general && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-              <p className="text-sm font-medium text-red-600">{errors.general}</p>
+            <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-[11px] font-bold border border-red-100">
+              {errors.general}
             </div>
           )}
 
-          <div className="space-y-4">
-            <button
-              onClick={handleNext}
-              disabled={mutation.isPending || !isHydrated}
-              className="flex w-full items-center justify-center gap-3 rounded-[1.6rem] px-5 py-4 text-sm font-black uppercase tracking-widest text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ background: signatureGradient }}
-            >
-              {mutation.isPending ? "Processing..." : !isHydrated ? "Loading..." : currentStep === 4 ? "Launch Store" : "Next Step"}
-              <span className="material-symbols-outlined">
-                {mutation.isPending || !isHydrated ? "hourglass_empty" : currentStep === 4 ? "rocket_launch" : "chevron_right"}
-              </span>
-            </button>
+          <div className="space-y-6">
+            {currentStep === 1 && (
+              <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
+                <Field label="Business Bio" error={errors.description}>
+                  <textarea 
+                    className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none h-28 resize-none"
+                    placeholder="Tell customers about your store..."
+                    value={form.description}
+                    onChange={e => setForm({...form, description: e.target.value})}
+                  />
+                </Field>
 
-            {currentStep > 1 && (
-              <button
-                onClick={() => setCurrentStep((prev) => prev - 1)}
-                className="w-full py-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 transition-colors hover:text-slate-500"
-              >
-                Back to Previous
-              </button>
+                <Field label="Category" error={errors.category}>
+                  <select 
+                    className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none appearance-none"
+                    value={form.category}
+                    onChange={e => setForm({...form, category: e.target.value})}
+                  >
+                    <option value="">Select Category</option>
+                    {categoryOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                </Field>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="City">
+                    <select 
+                      className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none"
+                      value={form.city}
+                      onChange={e => setForm({...form, city: e.target.value})}
+                    >
+                      {SOUTH_AFRICAN_CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Country">
+                    <input className="w-full bg-slate-100 border-none rounded-2xl py-4 px-4 text-sm font-bold text-slate-400" value="South Africa" readOnly />
+                  </Field>
+                </div>
+
+                <Field label="Street Address">
+                  <input 
+                    className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none"
+                    placeholder="123 Precinct St."
+                    value={form.street}
+                    onChange={e => setForm({...form, street: e.target.value})}
+                  />
+                </Field>
+
+                <div className="pt-2">
+                  <p className="text-[10px] font-black uppercase text-slate-400 mb-3 tracking-widest">Opening Hours</p>
+                  <div className="bg-slate-50 rounded-[2rem] p-4 space-y-3">
+                    {daysOfWeek.slice(0, 7).map(day => (
+                      <div key={day} className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-600 w-16">{day.slice(0, 3)}</span>
+                        <div className="flex items-center gap-2">
+                           <input type="time" className="text-[10px] font-bold p-1 rounded bg-white border border-slate-100" value={form.opening_hours[day].open} />
+                           <span className="text-slate-300">-</span>
+                           <input type="time" className="text-[10px] font-bold p-1 rounded bg-white border border-slate-100" value={form.opening_hours[day].close} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
+
+            {currentStep === 2 && (
+              <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
+                <Field label="SA ID Number">
+                  <input className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.south_african_id_number} onChange={e => setForm({...form, south_african_id_number: e.target.value})} placeholder="900101..." />
+                </Field>
+                <Field label="Business Reg. Number">
+                  <input className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.business_registration_number} onChange={e => setForm({...form, business_registration_number: e.target.value})} placeholder="2024/..." />
+                </Field>
+                <div className="grid grid-cols-2 gap-4">
+                   <Field label="TIN / Tax No.">
+                     <input className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.tin} onChange={e => setForm({...form, tin: e.target.value})} />
+                   </Field>
+                   <Field label="VAT (Optional)">
+                     <input className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.vat_number} onChange={e => setForm({...form, vat_number: e.target.value})} />
+                   </Field>
+                </div>
+              </div>
+            )}
+
+            {currentStep === 3 && (
+              <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
+                <Field label="Bank Name">
+                  <input className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.bank_name} onChange={e => setForm({...form, bank_name: e.target.value})} placeholder="e.g. FNB" />
+                </Field>
+                <Field label="Account Holder">
+                  <input className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.bank_account_name} onChange={e => setForm({...form, bank_account_name: e.target.value})} />
+                </Field>
+                <Field label="Account Number">
+                  <input className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.bank_account} onChange={e => setForm({...form, bank_account: e.target.value})} />
+                </Field>
+              </div>
+            )}
+
+            {currentStep === 4 && (
+              <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Min Order (R)">
+                    <input type="number" className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.minimum_order_amount} onChange={e => setForm({...form, minimum_order_amount: e.target.value})} />
+                  </Field>
+                  <Field label="Radius (KM)">
+                    <input type="number" className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.delivery_radius_km} onChange={e => setForm({...form, delivery_radius_km: e.target.value})} />
+                  </Field>
+                </div>
+                
+                <ToggleRow 
+                  label="Auto-Accept Orders" 
+                  checked={form.auto_accept_orders} 
+                  onChange={v => setForm({...form, auto_accept_orders: v})} 
+                />
+                <ToggleRow 
+                  label="Push Notifications" 
+                  checked={form.notifications_enabled} 
+                  onChange={v => setForm({...form, notifications_enabled: v})} 
+                />
+              </div>
+            )}
+
+            {/* Navigation Button */}
+            <div className="pt-6">
+              <button
+                onClick={handleNext}
+                disabled={mutation.isPending}
+                className="w-full bg-[#ff9300] text-white font-black py-5 rounded-[2.5rem] shadow-xl shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {mutation.isPending ? 'Launching...' : currentStep === 4 ? 'Launch Store' : 'Continue'}
+                <span className="material-symbols-outlined font-bold">
+                  {currentStep === 4 ? 'rocket_launch' : 'arrow_forward'}
+                </span>
+              </button>
+              
+              {currentStep > 1 && (
+                <button 
+                  onClick={() => setCurrentStep(s => s - 1)}
+                  className="w-full mt-4 text-[10px] font-black uppercase text-slate-300 tracking-widest hover:text-slate-500"
+                >
+                  Previous Step
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </BottomSheetModal>
+    </div>
   );
 };
 
-const IconBlock = ({ icon, materialIconFill }) => (
-  <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center text-[#ff9300]">
-    <span className="material-symbols-outlined text-3xl" style={materialIconFill}>
-      {icon}
-    </span>
-  </div>
-);
-
 const Field = ({ label, children, error }) => (
-  <div className="space-y-2">
-    <label className="text-xs font-black uppercase tracking-widest text-slate-400 ml-1">
-      {label}
-    </label>
+  <div className="space-y-1.5">
+    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{label}</label>
     {children}
-    {error && <p className="text-xs text-red-500 ml-1">{error}</p>}
+    {error && <p className="text-[10px] text-red-500 font-bold ml-1">{error}</p>}
   </div>
 );
 
 const ToggleRow = ({ label, checked, onChange }) => (
-  <label className="flex items-center justify-between bg-slate-50 border border-slate-100 p-4 rounded-2xl cursor-pointer">
-    <span className="text-sm font-bold text-slate-700">{label}</span>
-    <input
-      type="checkbox"
-      checked={checked}
-      onChange={(e) => onChange(e.target.checked)}
-      className="w-5 h-5 rounded border-slate-300 text-[#ff9300] focus:ring-[#ff9300]"
-    />
-  </label>
+  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+    <span className="text-xs font-bold text-slate-600 uppercase tracking-tight">{label}</span>
+    <button 
+      onClick={() => onChange(!checked)}
+      className={`w-12 h-6 rounded-full transition-all relative ${checked ? 'bg-[#ff9300]' : 'bg-slate-200'}`}
+    >
+      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${checked ? 'left-7' : 'left-1'}`} />
+    </button>
+  </div>
 );
