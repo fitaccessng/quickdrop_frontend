@@ -1,44 +1,36 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateProfile } from '../api/auth';
-import { PageContainer } from '../components/common/PageContainer';
-import { SectionHeading } from '../components/common/SectionHeading';
-import { useAuthStore } from '../store/authStore';
+import React, { useState } from "react";
+import { Camera, CheckCircle2, MapPin, Phone } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
+
+import { updateProfile } from "../api/auth";
+import { BottomSheetModal } from "../components/common/BottomSheetModal";
+import { useAuthStore } from "../store/authStore";
 
 const SA_CITIES = [
-  'Johannesburg',
-  'Pretoria',
-  'Sandton',
-  'Soweto',
-  'Centurion',
-  'Cape Town',
-  'Stellenbosch',
-  'Paarl',
-  'George',
-  'Somerset West',
-  'Durban',
-  'Umhlanga',
-  'Pietermaritzburg',
-  'Ballito',
-  'Gqeberha',
-  'East London',
-  'Makhanda',
-  'Bloemfontein',
-  'Welkom',
-  'Sasolburg',
-  'Polokwane',
-  'Thohoyandou',
-  'Phalaborwa',
-  'Mbombela',
-  'Secunda',
-  'Emalahleni',
-  'Mahikeng',
-  'Potchefstroom',
-  'Rustenburg',
-  'Kimberley',
-  'Upington',
-  'Kuruman',
+  "Johannesburg",
+  "Pretoria",
+  "Sandton",
+  "Soweto",
+  "Centurion",
+  "Cape Town",
+  "Stellenbosch",
+  "Paarl",
+  "George",
+  "Somerset West",
+  "Durban",
+  "Umhlanga",
+  "Pietermaritzburg",
+  "Ballito",
+  "Gqeberha",
+  "East London",
+  "Makhanda",
+  "Bloemfontein",
+  "Welkom",
+  "Sasolburg",
+  "Polokwane",
+  "Mbombela",
+  "Rustenburg",
 ];
 
 export const CustomerOnboarding = () => {
@@ -47,46 +39,37 @@ export const CustomerOnboarding = () => {
   const user = useAuthStore((state) => state.user);
   const setProfile = useAuthStore((state) => state.setProfile);
   const [form, setForm] = useState({
-    country: 'SA',
-    city: user?.city || '',
-    state: user?.state || '',
-    street: user?.street || '',
-    pobox: user?.po_box || '',
-    avatar_url: user?.avatar_url || '',
-    phone: user?.phone || '',
+    city: user?.city || "",
+    state: user?.state || "",
+    street: user?.street || "",
+    pobox: user?.po_box || "",
+    avatar_url: user?.avatar_url || "",
+    phone: user?.phone || "",
   });
-
-  const [previewImage, setPreviewImage] = useState(user?.avatar_url || null);
+  const [previewImage, setPreviewImage] = useState(user?.avatar_url || "");
 
   const mutation = useMutation({
     mutationFn: updateProfile,
     onSuccess: (data) => {
       setProfile(data);
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-      navigate('/dashboard');
+      queryClient.invalidateQueries({ queryKey: ["user-profile"] });
+      navigate("/dashboard");
     },
   });
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result);
-        setForm((prev) => ({ ...prev, avatar_url: reader.result }));
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreviewImage(reader.result);
+      setForm((prev) => ({ ...prev, avatar_url: reader.result }));
+    };
+    reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!form.city || !form.state || !form.street) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
+  const handleSubmit = (event) => {
+    event.preventDefault();
     mutation.mutate({
       phone: form.phone,
       city: form.city,
@@ -98,133 +81,134 @@ export const CustomerOnboarding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f6f7] py-12 px-6">
-      <PageContainer className="grid text-black gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-        <SectionHeading
-          eyebrow="Customer Onboarding"
-          title="Complete Your Profile"
-          description="Help us personalize your experience by adding your delivery address and profile information."
-        />
-        
-        <form onSubmit={handleSubmit} className="rounded-[2rem] bg-white p-8 shadow-sm border border-slate-200/60 space-y-6">
-          
-          {/* Profile Picture */}
-          <div className="text-center">
-            <div className="w-24 h-24 mx-auto mb-4 rounded-2xl overflow-hidden border-4 border-blue-100 flex items-center justify-center bg-slate-100">
+    <BottomSheetModal
+      eyebrow="Customer Setup"
+      title="Set up your delivery profile"
+      subtitle="Everything here lives in a mobile-first bottom sheet so the form feels native on phones and still stays elegant on larger screens."
+      onClose={() => navigate(-1)}
+      className="max-w-4xl"
+    >
+      <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
+        <section className="rounded-[1.8rem] bg-slate-950 p-6 text-white sm:p-8">
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-orange-300">Ready To Deliver</p>
+          <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">A complete address makes every drop faster.</h2>
+          <p className="mt-4 text-sm leading-6 text-slate-300">
+            Add your contact details, street location, and profile photo so orders and support updates always reach the right person.
+          </p>
+
+          <div className="mt-8 space-y-3">
+            <FeatureRow icon={Phone} text="Realtime order and support updates" />
+            <FeatureRow icon={MapPin} text="Cleaner delivery handoff for riders" />
+            <FeatureRow icon={CheckCircle2} text="Onboarding unlocks your customer dashboard" />
+          </div>
+        </section>
+
+        <form onSubmit={handleSubmit} className="space-y-5 rounded-[1.8rem] border border-slate-100 bg-white p-5 shadow-lg sm:p-7">
+          <div className="flex flex-col items-center rounded-[1.6rem] bg-slate-50 p-5 text-center">
+            <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
               {previewImage ? (
-                <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+                <img src={previewImage} alt="Customer profile preview" className="h-full w-full object-cover" />
               ) : (
-                <span className="material-symbols-outlined text-4xl text-slate-400">person</span>
+                <Camera className="text-slate-300" size={28} />
               )}
             </div>
-            <label className="px-6 py-2 bg-blue-50 text-blue-600 font-bold text-sm rounded-xl border border-blue-200 cursor-pointer hover:bg-blue-100 transition-all inline-block">
-              Upload Picture
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={handleImageChange}
-                className="hidden"
-              />
+            <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-orange-700 transition hover:bg-orange-100">
+              Upload Photo
+              <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
             </label>
           </div>
 
-          {/* Phone Number */}
-          <div>
-            <label className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-2">Phone Number</label>
-            <input 
-              type="tel" 
-              value={form.phone}
-              onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
-              className="w-full text-black px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-slate-50"
-              placeholder="+27 82 123 4567"
-              required
+          <SheetInput
+            label="Phone Number"
+            value={form.phone}
+            onChange={(value) => setForm((prev) => ({ ...prev, phone: value }))}
+            placeholder="+234 800 000 0000"
+          />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SheetSelect
+              label="City"
+              value={form.city}
+              onChange={(value) => setForm((prev) => ({ ...prev, city: value }))}
+            >
+              <option value="">Select city</option>
+              {SA_CITIES.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </SheetSelect>
+
+            <SheetInput
+              label="State / Area"
+              value={form.state}
+              onChange={(value) => setForm((prev) => ({ ...prev, state: value }))}
+              placeholder="Lagos Island"
             />
           </div>
 
-          {/* Delivery Address */}
-          <div className="space-y-4">
-            <h3 className="font-black text-slate-800 text-sm">Delivery Address</h3>
+          <SheetInput
+            label="Street Address"
+            value={form.street}
+            onChange={(value) => setForm((prev) => ({ ...prev, street: value }))}
+            placeholder="12 Admiralty Way"
+          />
 
-            <div>
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-2">Country</label>
-              <input
-                type="text"
-                value="South Africa (SA)"
-                readOnly
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-slate-100 text-slate-600 cursor-not-allowed"
-              />
+          <SheetInput
+            label="PO Box"
+            required={false}
+            value={form.pobox}
+            onChange={(value) => setForm((prev) => ({ ...prev, pobox: value }))}
+            placeholder="Optional"
+          />
+
+          {mutation.error ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
+              We could not save your profile right now. Please try again.
             </div>
+          ) : null}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-2">City</label>
-                <select 
-                  value={form.city}
-                  onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-slate-50"
-                  required
-                >
-                  <option value="">Select City</option>
-                  {SA_CITIES.map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-2">Province/Area</label>
-                <input 
-                  type="text" 
-                  value={form.state}
-                  onChange={(e) => setForm((prev) => ({ ...prev, state: e.target.value }))}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-slate-50"
-                  placeholder="e.g., Gauteng or Sandton"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-2">Street Address</label>
-              <input 
-                type="text" 
-                value={form.street}
-                onChange={(e) => setForm((prev) => ({ ...prev, street: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-slate-50"
-                placeholder="e.g., 123 Main Street"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-black uppercase tracking-widest text-slate-400 block mb-2">P.O. Box (Optional)</label>
-              <input 
-                type="text" 
-                value={form.pobox}
-                onChange={(e) => setForm((prev) => ({ ...prev, pobox: e.target.value }))}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-slate-50"
-                placeholder="P.O. Box (optional)"
-              />
-            </div>
-          </div>
-
-          <button 
+          <button
             type="submit"
             disabled={mutation.isPending}
-            className="w-full py-5 rounded-2xl bg-gradient-to-r from-[#ff9300] to-[#ffb857] text-white font-black text-sm uppercase tracking-widest active:scale-[0.98] transition-all disabled:opacity-50 shadow-lg"
+            className="w-full rounded-[1.4rem] bg-[linear-gradient(135deg,#ff9300_0%,#ffb857_100%)] px-5 py-4 text-sm font-black uppercase tracking-[0.24em] text-white shadow-[0_22px_40px_-24px_rgba(255,147,0,0.9)] transition active:scale-[0.99] disabled:opacity-60"
           >
-            {mutation.isPending ? 'Saving...' : 'Complete Setup'}
+            {mutation.isPending ? "Saving..." : "Complete Setup"}
           </button>
-
-          {mutation.error && (
-            <div className="p-4 bg-error/10 border border-error rounded-xl">
-              <p className="text-sm text-error font-medium">An error occurred. Please try again.</p>
-            </div>
-          )}
         </form>
-      </PageContainer>
-    </div>
+      </div>
+    </BottomSheetModal>
   );
 };
+
+const FeatureRow = ({ icon: Icon, text }) => (
+  <div className="flex items-center gap-3 rounded-2xl bg-white/5 px-4 py-3 text-sm text-slate-200">
+    <Icon size={16} className="text-orange-300" />
+    <span>{text}</span>
+  </div>
+);
+
+const baseInputClassName =
+  "w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:bg-white";
+
+const SheetInput = ({ label, value, onChange, placeholder, required = true }) => (
+  <div className="space-y-2">
+    <label className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{label}</label>
+    <input
+      value={value}
+      required={required}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={placeholder}
+      className={baseInputClassName}
+    />
+  </div>
+);
+
+const SheetSelect = ({ label, value, onChange, children }) => (
+  <div className="space-y-2">
+    <label className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{label}</label>
+    <select value={value} onChange={(event) => onChange(event.target.value)} className={baseInputClassName}>
+      {children}
+    </select>
+  </div>
+);

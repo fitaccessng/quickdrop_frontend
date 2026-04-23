@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { completeVendorOnboarding } from "../api/auth";
+import { BottomSheetModal } from "../components/common/BottomSheetModal";
 import { fetchServiceCategories } from "../api/system";
 import { useAuthStore } from "../store/authStore";
 import { isFoodCategory } from "../lib/vendorPortal";
@@ -252,12 +253,18 @@ export const VendorOnboardingPage = () => {
   }
 
   return (
-    <div className="bg-[#f5f6f7] min-h-screen font-body text-slate-900 antialiased">
-      <div className="bg-white px-6 pt-12 pb-8 rounded-b-[3rem] shadow-sm border-b border-slate-200">
-        <div className="flex justify-between items-center mb-8 max-w-2xl mx-auto">
+    <BottomSheetModal
+      eyebrow="Vendor Setup"
+      title="Launch your storefront"
+      subtitle="Your vendor onboarding now lives in a responsive bottom sheet so the whole setup flow feels native on mobile and remains easy to scan on desktop."
+      onClose={() => navigate(-1)}
+      className="max-w-3xl"
+    >
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-8 flex items-center justify-between">
           <button
             onClick={() => (currentStep > 1 ? setCurrentStep((prev) => prev - 1) : navigate(-1))}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 active:scale-90 transition-all"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 transition-all active:scale-90"
           >
             <span className="material-symbols-outlined text-slate-400">arrow_back</span>
           </button>
@@ -277,7 +284,7 @@ export const VendorOnboardingPage = () => {
           </span>
         </div>
 
-        <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="animate-in fade-in slide-in-from-top-4 duration-500">
           <h1 className="text-2xl font-black tracking-tight">
             {currentStep === 1 && "Store Setup"}
             {currentStep === 2 && "Compliance Upload"}
@@ -291,16 +298,15 @@ export const VendorOnboardingPage = () => {
             {currentStep === 4 && "Finish support, delivery, and operational preferences."}
           </p>
         </div>
-      </div>
 
-      <main className="p-6 mt-4 space-y-6 max-w-2xl mx-auto pb-20">
-        <div className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 border border-white space-y-8">
+        <div className="mt-6 space-y-6 pb-4">
+          <div className="space-y-8 rounded-[2rem] border border-slate-100 bg-white p-5 shadow-xl shadow-slate-200/50 sm:rounded-[2.5rem] sm:p-8">
           {currentStep === 1 && (
             <>
               <IconBlock icon="storefront" materialIconFill={materialIconFill} />
 
-              <Field label="Store Description" error={errors.description}>
-                <textarea
+                <Field label="Store Description" error={errors.description}>
+                  <textarea
                   value={form.description}
                   onChange={(e) => {
                     setForm((prev) => ({ ...prev, description: e.target.value }));
@@ -487,7 +493,7 @@ export const VendorOnboardingPage = () => {
                   />
                 </Field>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Tax Number / TIN">
                     <input
                       type="text"
@@ -554,7 +560,7 @@ export const VendorOnboardingPage = () => {
             <>
               <IconBlock icon="tune" materialIconFill={materialIconFill} />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {categoryLooksLikeFood && (
                   <Field label="Prep Time (min)">
                     <input
@@ -623,38 +629,39 @@ export const VendorOnboardingPage = () => {
               />
             </>
           )}
-        </div>
-
-        {errors.general && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-            <p className="text-sm text-red-600 font-medium">{errors.general}</p>
           </div>
-        )}
 
-        <div className="space-y-4">
-          <button
-            onClick={handleNext}
-            disabled={mutation.isPending || !isHydrated}
-            className="w-full py-5 rounded-[2rem] text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-orange-200/50 active:scale-[0.98] transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ background: signatureGradient }}
-          >
-            {mutation.isPending ? "Processing..." : !isHydrated ? "Loading..." : (currentStep === 4 ? "Launch Store" : "Next Step")}
-            <span className="material-symbols-outlined">
-              {mutation.isPending || !isHydrated ? "hourglass_empty" : (currentStep === 4 ? "rocket_launch" : "chevron_right")}
-            </span>
-          </button>
-
-          {currentStep > 1 && (
-            <button
-              onClick={() => setCurrentStep((prev) => prev - 1)}
-              className="w-full py-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 hover:text-slate-500 transition-colors"
-            >
-              Back to Previous
-            </button>
+          {errors.general && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <p className="text-sm font-medium text-red-600">{errors.general}</p>
+            </div>
           )}
+
+          <div className="space-y-4">
+            <button
+              onClick={handleNext}
+              disabled={mutation.isPending || !isHydrated}
+              className="flex w-full items-center justify-center gap-3 rounded-[1.6rem] px-5 py-4 text-sm font-black uppercase tracking-widest text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ background: signatureGradient }}
+            >
+              {mutation.isPending ? "Processing..." : !isHydrated ? "Loading..." : currentStep === 4 ? "Launch Store" : "Next Step"}
+              <span className="material-symbols-outlined">
+                {mutation.isPending || !isHydrated ? "hourglass_empty" : currentStep === 4 ? "rocket_launch" : "chevron_right"}
+              </span>
+            </button>
+
+            {currentStep > 1 && (
+              <button
+                onClick={() => setCurrentStep((prev) => prev - 1)}
+                className="w-full py-2 text-[10px] font-black uppercase tracking-[0.3em] text-slate-300 transition-colors hover:text-slate-500"
+              >
+                Back to Previous
+              </button>
+            )}
+          </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </BottomSheetModal>
   );
 };
 

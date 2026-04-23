@@ -1,8 +1,10 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Bike, Car, IdCard, MapPin, Truck } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 import { updateRiderProfile } from "../api/rider";
+import { BottomSheetModal } from "../components/common/BottomSheetModal";
 import { useAuthStore } from "../store/authStore";
 
 const readFileAsDataUrl = (file) =>
@@ -74,7 +76,6 @@ export const RiderOnboarding = () => {
   const handleAvatarChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     try {
       const avatarUrl = await readFileAsDataUrl(file);
       setForm((current) => ({ ...current, avatar_url: avatarUrl }));
@@ -85,14 +86,26 @@ export const RiderOnboarding = () => {
   };
 
   return (
-    <main className="min-h-screen bg-[#f5f6f7] px-6 py-10">
-      <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-        <section className="rounded-[2.5rem] bg-slate-900 p-8 text-white">
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff9300]">Rider Setup</p>
-          <h1 className="mt-4 font-headline text-4xl font-extrabold leading-tight">Finish your delivery profile.</h1>
-          <p className="mt-4 text-sm leading-relaxed text-slate-300">
-            Add your service area, delivery vehicle, and rider identity so dispatch can send you live orders.
+    <BottomSheetModal
+      eyebrow="Rider Setup"
+      title="Finish your rider profile"
+      subtitle="This onboarding opens like a bottom sheet and keeps the whole form thumb-friendly on smaller screens."
+      onClose={() => navigate(-1)}
+      className="max-w-4xl"
+    >
+      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="rounded-[1.8rem] bg-slate-950 p-6 text-white sm:p-8">
+          <p className="text-[10px] font-black uppercase tracking-[0.28em] text-orange-300">Rider Access</p>
+          <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">Get verified and start receiving delivery requests.</h2>
+          <p className="mt-4 text-sm leading-6 text-slate-300">
+            Dispatch uses your address, vehicle type, and license details to match you with the right orders and keep customers informed.
           </p>
+
+          <div className="mt-8 grid gap-3">
+            <VehicleHint icon={Bike} label="Bike" text="Fast inner-city pickups and handoffs" />
+            <VehicleHint icon={Car} label="Car" text="Balanced option for larger orders and distance" />
+            <VehicleHint icon={Truck} label="Van" text="Heavy or multi-order delivery capacity" />
+          </div>
         </section>
 
         <form
@@ -101,113 +114,94 @@ export const RiderOnboarding = () => {
             setError("");
             mutation.mutate(form);
           }}
-          className="space-y-6 rounded-[3rem] border border-slate-100 bg-white p-10 shadow-2xl shadow-slate-200/50"
+          className="space-y-5 rounded-[1.8rem] border border-slate-100 bg-white p-5 shadow-lg sm:p-7"
         >
-          <div className="flex flex-col items-center gap-4 rounded-[2rem] bg-slate-50 p-6">
-            <div className="h-28 w-28 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col items-center gap-4 rounded-[1.6rem] bg-slate-50 p-5 text-center">
+            <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
               {form.avatar_url ? (
                 <img src={form.avatar_url} alt="Rider profile preview" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-slate-300">
-                  <span className="material-symbols-outlined text-5xl">person</span>
-                </div>
+                <IdCard className="text-slate-300" size={30} />
               )}
             </div>
-            <label className="cursor-pointer rounded-2xl bg-[#0A192F] px-5 py-3 text-xs font-black uppercase tracking-widest text-white transition-colors hover:bg-orange-600">
-              Upload Profile Picture
+            <label className="cursor-pointer rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-orange-700 transition hover:bg-orange-100">
+              Upload Photo
               <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
             </label>
-            <p className="text-center text-xs text-slate-500">Choose a clear photo from your device.</p>
           </div>
 
-          <div className="mb-4">
-            <h3 className="text-xl font-bold text-[#0A192F]">Rider Details</h3>
-            <p className="text-sm text-slate-500 font-light">Fill in your information to start your journey.</p>
+          <SheetInput label="Phone Number" value={form.phone} onChange={(value) => setForm((current) => ({ ...current, phone: value }))} />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SheetInput label="City" value={form.city} onChange={(value) => setForm((current) => ({ ...current, city: value }))} />
+            <SheetInput label="State" value={form.state} onChange={(value) => setForm((current) => ({ ...current, state: value }))} />
           </div>
 
-          <GridInput 
-            label="Phone Number" 
-            value={form.phone} 
-            onChange={(value) => setForm((current) => ({ ...current, phone: value }))} 
+          <SheetInput
+            label="Street Address"
+            value={form.street}
+            onChange={(value) => setForm((current) => ({ ...current, street: value }))}
+          />
+          <SheetInput
+            label="PO Box"
+            required={false}
+            value={form.po_box}
+            onChange={(value) => setForm((current) => ({ ...current, po_box: value }))}
           />
 
-          <div className="grid gap-6 md:grid-cols-2">
-            <GridInput 
-              label="City" 
-              value={form.city} 
-              onChange={(value) => setForm((current) => ({ ...current, city: value }))} 
-            />
-            <GridInput 
-              label="State" 
-              value={form.state} 
-              onChange={(value) => setForm((current) => ({ ...current, state: value }))} 
-            />
-          </div>
-
-          <GridInput 
-            label="Street Address" 
-            value={form.street} 
-            onChange={(value) => setForm((current) => ({ ...current, street: value }))} 
-          />
-
-          <GridInput 
-            label="PO Box" 
-            required={false} 
-            value={form.po_box} 
-            onChange={(value) => setForm((current) => ({ ...current, po_box: value }))} 
-          />
-
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Vehicle Type</label>
-              <select 
-                value={form.vehicle_type} 
-                onChange={(event) => setForm((current) => ({ ...current, vehicle_type: event.target.value }))} 
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-black font-medium focus:border-orange-500 focus:bg-white focus:outline-none transition-all appearance-none cursor-pointer"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23000000'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1.25rem center', backgroundSize: '1.2rem' }}
+              <label className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">Vehicle Type</label>
+              <select
+                value={form.vehicle_type}
+                onChange={(event) => setForm((current) => ({ ...current, vehicle_type: event.target.value }))}
+                className={baseInputClassName}
               >
                 <option value="bike">Bike</option>
                 <option value="car">Car</option>
                 <option value="van">Van</option>
               </select>
             </div>
-            <GridInput 
-              label="License Number" 
-              value={form.license_number} 
-              onChange={(value) => setForm((current) => ({ ...current, license_number: value }))} 
+
+            <SheetInput
+              label="License Number"
+              value={form.license_number}
+              onChange={(value) => setForm((current) => ({ ...current, license_number: value }))}
             />
           </div>
 
-          {error && (
-            <div className="flex items-center gap-3 rounded-2xl bg-red-50 p-4 text-sm font-medium text-red-600 border border-red-100">
-              <span>⚠️</span> {error}
-            </div>
-          )}
+          {error ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-600">{error}</div>
+          ) : null}
 
-          <button 
-            disabled={mutation.isPending} 
-            className="group relative w-full overflow-hidden rounded-[1.5rem] bg-[#0A192F] py-5 font-bold uppercase tracking-widest text-white transition-all hover:bg-orange-600 active:scale-[0.98] disabled:opacity-70"
+          <button
+            disabled={mutation.isPending}
+            className="w-full rounded-[1.4rem] bg-[#0A192F] px-5 py-4 text-sm font-black uppercase tracking-[0.24em] text-white transition hover:bg-orange-600 active:scale-[0.99] disabled:opacity-60"
           >
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              {mutation.isPending ? "Saving Profile..." : "Complete Rider Setup"}
-            </span>
+            {mutation.isPending ? "Saving Profile..." : "Complete Rider Setup"}
           </button>
         </form>
       </div>
-    </main>
+    </BottomSheetModal>
   );
 };
 
-// UPDATED: GridInput now correctly applies text-black and accepts className
-const GridInput = ({ label, value, onChange, required = true, className = "" }) => (
+const baseInputClassName =
+  "w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:bg-white";
+
+const SheetInput = ({ label, value, onChange, required = true }) => (
   <div className="space-y-2">
-    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">{label}</label>
-    <input
-      value={value}
-      required={required}
-      onChange={(event) => onChange(event.target.value)}
-      // Added text-black here. It also merges any className passed from the parent.
-      className={`w-full rounded-2xl border border-slate-200 bg-slate-50/50 px-5 py-4 text-black font-medium focus:border-orange-500 focus:bg-white focus:outline-none transition-all ${className}`}
-    />
+    <label className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{label}</label>
+    <input value={value} required={required} onChange={(event) => onChange(event.target.value)} className={baseInputClassName} />
+  </div>
+);
+
+const VehicleHint = ({ icon: Icon, label, text }) => (
+  <div className="rounded-2xl bg-white/5 px-4 py-3">
+    <div className="flex items-center gap-2 text-sm font-bold text-white">
+      <Icon size={16} className="text-orange-300" />
+      {label}
+    </div>
+    <p className="mt-1 text-sm text-slate-300">{text}</p>
   </div>
 );
