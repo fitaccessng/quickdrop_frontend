@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { fetchProducts } from '../api/products';
-import { fetchServiceCategories } from '../api/system';
+import { fetchServiceCategoryOverview } from '../api/system';
 import { useCartStore } from '../store/cartStore';
 import { QuickDropLogo } from '../components/branding/QuickDropLogo';
 
@@ -40,15 +39,16 @@ export const CategoriesPage = () => {
     return () => clearInterval(timer);
   }, [banners.length]);
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ['service-categories'],
-    queryFn: fetchServiceCategories,
+  const {
+    data: categories = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ['service-categories-overview'],
+    queryFn: fetchServiceCategoryOverview,
   });
 
-  const { data: products = [] } = useQuery({
-    queryKey: ['all-products-count'],
-    queryFn: () => fetchProducts({}),
-  });
+  const totalProducts = categories.reduce((sum, category) => sum + (category.product_count ?? 0), 0);
 
   return (
     <div className="min-h-screen bg-slate-50 font-body text-slate-900 antialiased pb-20">
@@ -120,9 +120,18 @@ export const CategoriesPage = () => {
           </div>
 
           <div className="px-6 flex overflow-x-auto no-scrollbar gap-4 snap-x">
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="flex-shrink-0 w-32 snap-start flex flex-col items-center animate-pulse">
+                  <div className="w-24 h-24 rounded-[2.5rem] bg-slate-200 mb-3" />
+                  <div className="h-3 w-20 rounded bg-slate-200" />
+                  <div className="mt-2 h-2 w-14 rounded bg-slate-100" />
+                </div>
+              ))
+            ) : null}
             {categories.map((category, i) => {
               const theme = CATEGORY_ICONS[category.name] || CATEGORY_ICONS.Others;
-              const productCount = products.filter(p => p.category === category.name).length;
+              const productCount = category.product_count ?? 0;
 
               return (
                 <motion.button
@@ -145,6 +154,16 @@ export const CategoriesPage = () => {
                 </motion.button>
               );
             })}
+            {!isLoading && !isError && categories.length === 0 ? (
+              <div className="w-full rounded-[2rem] border border-dashed border-slate-200 bg-white px-6 py-10 text-center text-sm font-semibold text-slate-500">
+                No categories are available yet.
+              </div>
+            ) : null}
+            {isError ? (
+              <div className="w-full rounded-[2rem] border border-rose-100 bg-rose-50 px-6 py-10 text-center text-sm font-semibold text-rose-700">
+                We couldn&apos;t load categories right now.
+              </div>
+            ) : null}
           </div>
         </section>
 
@@ -161,7 +180,7 @@ export const CategoriesPage = () => {
               </h2>
               <div className="flex gap-10">
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex-1">
-                  <p className="text-2xl font-black italic">{products.length}</p>
+                  <p className="text-2xl font-black italic">{totalProducts}</p>
                   <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Live Inventory</p>
                 </div>
                 <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex-1">
