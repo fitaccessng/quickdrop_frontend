@@ -62,7 +62,6 @@ export const CategoriesPage = () => {
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
           
-          <QuickDropLogo size={32} showWordmark labelClassName="font-headline text-xl font-bold text-slate-900" />
 
           <button 
             onClick={() => navigate('/cart')}
@@ -168,44 +167,7 @@ export const CategoriesPage = () => {
         </section>
 
         {/* --- Premium Stats Bento Box --- */}
-        <section className="px-6 grid grid-cols-2 gap-4">
-          <div 
-            className="col-span-2 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl"
-            style={{ background: signatureGradient }}
-          >
-            <div className="relative z-10">
-              <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.3em] mb-2">Global Access</p>
-              <h2 className="text-3xl font-black tracking-tight leading-tight mb-6">
-                Fresh drops <br/> across {categories.length} sectors.
-              </h2>
-              <div className="flex gap-10">
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex-1">
-                  <p className="text-2xl font-black italic">{totalProducts}</p>
-                  <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Live Inventory</p>
-                </div>
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 flex-1">
-                  <p className="text-2xl font-black italic">SA</p>
-                  <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest">Market</p>
-                </div>
-              </div>
-            </div>
-            <div className="absolute top-0 right-0 opacity-10 pointer-events-none translate-x-1/4 -translate-y-1/4">
-               <span className="material-symbols-outlined text-[180px]">hub</span>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-[2rem] p-6 border border-slate-100 flex flex-col items-center justify-center text-center shadow-sm">
-              <span className="material-symbols-outlined text-rose-600 mb-2" style={materialIconFill}>bolt</span>
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Speed</p>
-              <p className="text-lg font-black text-slate-900 mt-1 italic">Under 30m</p>
-          </div>
-
-          <div className="bg-white rounded-[2rem] p-6 border border-slate-100 flex flex-col items-center justify-center text-center shadow-sm">
-              <span className="material-symbols-outlined text-slate-800 mb-2" style={materialIconFill}>verified</span>
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Quality</p>
-              <p className="text-lg font-black text-slate-900 mt-1 italic">Vetted</p>
-          </div>
-        </section>
+      
       </main>
 
       <style dangerouslySetInnerHTML={{ __html: `

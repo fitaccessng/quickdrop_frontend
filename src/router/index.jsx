@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createHashRouter } from "react-router-dom";
 
 import { AppShell } from "../components/layout/AppShell";
 import { ProtectedRoute } from "../components/layout/ProtectedRoute";
@@ -74,7 +74,7 @@ import { VendorProfilePage } from "../pages/VendorProfilePage";
 import { CategoryDetailPage } from "../pages/CategoryDetailPage";
 import { AppErrorPage } from "../pages/AppErrorPage";
 
-export const router = createBrowserRouter([
+export const router = createHashRouter([
   {
     path: "/",
     element: <AppShell />,
