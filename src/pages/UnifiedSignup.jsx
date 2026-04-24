@@ -63,7 +63,13 @@ export const UnifiedSignup = () => {
     mutationFn: unifiedSignup,
     onSuccess: (data) => {
       setSession(data.access_token, data.user, data.account_type);
-      navigate(data.account_type === 'vendor' ? '/vendor/dashboard' : '/dashboard');
+      navigate(
+        data.account_type === 'vendor'
+          ? '/vendor/dashboard'
+          : data.account_type === 'rider'
+            ? '/rider/onboarding'
+            : '/onboarding'
+      );
     },
     onError: () => setFormError('Signup failed. Please try again.')
   });
