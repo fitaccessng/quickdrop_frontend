@@ -1,19 +1,151 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { fetchProducts } from "../api/products";
+import { fetchServiceCategories } from "../api/system";
 import { fetchVendors } from "../api/vendors";
 import { MapPin, Search, Menu, X } from 'lucide-react';
 import quickdropLogo from "../styles/quickdrop.jpeg";
 
+const SOUTH_AFRICAN_LOCATIONS = [
+  "Johannesburg",
+  "Pretoria",
+  "Cape Town",
+  "Durban",
+  "Soweto",
+  "Sandton",
+  "Centurion",
+  "Midrand",
+  "Roodepoort",
+  "Benoni",
+  "Boksburg",
+  "Kempton Park",
+  "Alberton",
+  "Krugersdorp",
+  "Vereeniging",
+  "East Rand",
+  "Bloemfontein",
+  "Welkom",
+  "Bethlehem",
+  "Kroonstad",
+  "Polokwane",
+  "Tzaneen",
+  "Thohoyandou",
+  "Lephalale",
+  "Mokopane",
+  "Mbombela",
+  "Witbank",
+  "Secunda",
+  "Ermelo",
+  "Middelburg",
+  "Nelspruit",
+  "Rustenburg",
+  "Mahikeng",
+  "Klerksdorp",
+  "Potchefstroom",
+  "Mmabatho",
+  "Kimberley",
+  "Upington",
+  "Kuruman",
+  "Springbok",
+  "Port Elizabeth",
+  "Gqeberha",
+  "East London",
+  "Mthatha",
+  "Grahamstown",
+  "Queenstown",
+  "Bhisho",
+  "Pietermaritzburg",
+  "Umhlanga",
+  "Ballito",
+  "Richards Bay",
+  "Newcastle",
+  "Ladysmith",
+  "Margate",
+  "George",
+  "Stellenbosch",
+  "Paarl",
+  "Somerset West",
+  "Hermanus",
+  "Mossel Bay",
+  "Worcester",
+  "Bellville",
+  "Brackenfell",
+  "Goodwood",
+  "Khayelitsha",
+  "Atlantis",
+];
+
+const slugify = (value = "") =>
+  value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
 export const LandingPage = () => {
+  const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [selectedCity, setSelectedCity] = useState("Johannesburg");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchFeedback, setSearchFeedback] = useState("");
 
   // Fetch only approved vendors
   const { data: vendors = [], isLoading } = useQuery({
     queryKey: ["approved-vendors"],
     queryFn: () => fetchVendors({ approved: true }),
   });
+  const { data: categories = [] } = useQuery({
+    queryKey: ["service-categories"],
+    queryFn: fetchServiceCategories,
+  });
+  const { data: products = [] } = useQuery({
+    queryKey: ["landing-products"],
+    queryFn: () => fetchProducts({}),
+  });
+
+  const availableCategoryMatches = useMemo(() => {
+    const normalizedTerm = searchTerm.trim().toLowerCase();
+    if (!normalizedTerm) return [];
+
+    const vendorMap = new Map(vendors.map((vendor) => [vendor.id, vendor]));
+
+    return categories.filter((category) => {
+      const categoryName = String(category.name ?? "");
+      const categoryMatches = categoryName.toLowerCase().includes(normalizedTerm);
+      if (!categoryMatches) return false;
+
+      return products.some((product) => {
+        const vendor = vendorMap.get(product.vendor_id);
+        const vendorCity = String(vendor?.city ?? "").toLowerCase();
+        const categorySlug = slugify(categoryName);
+        const productSlug = slugify(product.category ?? "");
+        return (
+          vendorCity === selectedCity.toLowerCase() &&
+          (product.category === categoryName || productSlug === categorySlug)
+        );
+      });
+    });
+  }, [categories, products, searchTerm, selectedCity, vendors]);
+
+  const handleSearch = () => {
+    const normalizedTerm = searchTerm.trim();
+    if (!normalizedTerm) {
+      setSearchFeedback("Type a category to search.");
+      return;
+    }
+
+    const exactMatch =
+      availableCategoryMatches.find((category) => category.name.toLowerCase() === normalizedTerm.toLowerCase()) ||
+      availableCategoryMatches[0];
+
+    if (!exactMatch) {
+      setSearchFeedback(`No item available in ${selectedCity} for "${normalizedTerm}".`);
+      return;
+    }
+
+    setSearchFeedback("");
+    navigate(`/category/${exactMatch.slug}`, {
+      state: { selectedCity, searchTerm: exactMatch.name },
+    });
+  };
 
   // Handle navbar background change on scroll
   useEffect(() => {
@@ -120,33 +252,89 @@ export const LandingPage = () => {
         </div>
         
         {/* Search Bar Container */}
-        <div className="max-w-5xl mx-auto w-full bg-white/10 backdrop-blur-md p-2 rounded-3xl md:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row items-stretch gap-2 border border-white/20 relative z-10">
-          <div className="flex-1 flex flex-col md:flex-row items-center bg-white rounded-2xl md:rounded-[2rem] px-4 py-2 md:py-1">
-            <div className="flex items-center gap-2 w-full md:w-auto px-2 py-2 md:py-0 border-b md:border-b-0 md:border-r border-slate-100">
-              <MapPin size={20} className="text-[#ff9300] shrink-0" />
-              <select className="bg-transparent border-none focus:ring-0 font-bold text-slate-800 text-sm md:text-base cursor-pointer outline-none min-w-[140px] w-full md:w-auto">
-                <option value="sandton">Sandton, GP</option>
-                <option value="umhlanga">Umhlanga, KZN</option>
-                <option value="cape-town">Cape Town, WC</option>
-                <option value="pretoria">Pretoria, GP</option>
-              </select>
+        <div className="max-w-5xl mx-auto w-full relative z-10">
+          <div className="bg-white/10 backdrop-blur-md p-2 rounded-3xl md:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row items-stretch gap-2 border border-white/20">
+            <div className="flex-1 flex flex-col md:flex-row items-center bg-white rounded-2xl md:rounded-[2rem] px-4 py-2 md:py-1">
+              <div className="flex items-center gap-2 w-full md:w-auto px-2 py-2 md:py-0 border-b md:border-b-0 md:border-r border-slate-100">
+                <MapPin size={20} className="text-[#ff9300] shrink-0" />
+                <select
+                  value={selectedCity}
+                  onChange={(event) => {
+                    setSelectedCity(event.target.value);
+                    setSearchFeedback("");
+                  }}
+                  className="bg-transparent border-none focus:ring-0 font-bold text-slate-800 text-sm md:text-base cursor-pointer outline-none min-w-[140px] w-full md:w-auto"
+                >
+                  {SOUTH_AFRICAN_LOCATIONS.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1 flex items-center gap-3 w-full px-4 py-3 md:py-0">
+                <Search size={20} className="text-slate-400 shrink-0" />
+                <input
+                  value={searchTerm}
+                  onChange={(event) => {
+                    setSearchTerm(event.target.value);
+                    setSearchFeedback("");
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      handleSearch();
+                    }
+                  }}
+                  className="bg-transparent border-none focus:ring-0 w-full py-1 text-slate-700 placeholder:text-slate-400 font-medium text-sm md:text-base outline-none"
+                  placeholder="Search categories like food, grocery, fashion..."
+                  type="text"
+                />
+              </div>
             </div>
-            <div className="flex-1 flex items-center gap-3 w-full px-4 py-3 md:py-0">
-              <Search size={20} className="text-slate-400 shrink-0" />
-              <input
-                className="bg-transparent border-none focus:ring-0 w-full py-1 text-slate-700 placeholder:text-slate-400 font-medium text-sm md:text-base outline-none"
-                placeholder="Search items..."
-                type="text"
-              />
-            </div>
+            <button
+              type="button"
+              onClick={handleSearch}
+              style={{ backgroundColor: "#ff9300" }}
+              className="text-white px-10 py-4 md:py-5 rounded-2xl md:rounded-[2rem] font-extrabold text-lg hover:brightness-110 active:scale-95 transition-all shadow-lg flex items-center justify-center"
+            >
+              Start Ordering
+            </button>
           </div>
-          <Link
-            to="/explore"
-            style={{ backgroundColor: "#ff9300" }}
-            className="text-white px-10 py-4 md:py-5 rounded-2xl md:rounded-[2rem] font-extrabold text-lg hover:brightness-110 active:scale-95 transition-all shadow-lg flex items-center justify-center"
-          >
-            Start Ordering
-          </Link>
+
+          {(searchTerm.trim() || searchFeedback) && (
+            <div className="mt-4 rounded-[1.8rem] border border-white/20 bg-slate-950/65 p-4 text-left backdrop-blur-xl">
+              {availableCategoryMatches.length > 0 ? (
+                <>
+                  <p className="text-[11px] font-black uppercase tracking-[0.24em] text-white/60">
+                    Available In {selectedCity}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {availableCategoryMatches.slice(0, 6).map((category) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() =>
+                          navigate(`/category/${category.slug}`, {
+                            state: { selectedCity, searchTerm: category.name },
+                          })
+                        }
+                        className="rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-white transition hover:bg-white/20"
+                      >
+                        {category.name}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : searchFeedback ? (
+                <p className="text-sm font-bold text-white/85">{searchFeedback}</p>
+              ) : (
+                <p className="text-sm font-bold text-white/85">
+                  No item available in {selectedCity} for "{searchTerm.trim()}".
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
