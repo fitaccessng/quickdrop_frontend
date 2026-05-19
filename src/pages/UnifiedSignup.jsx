@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { RoleSelectionModal } from '../components/auth/RoleSelectionModal';
 import { unifiedSignup } from '../api/auth';
+import { resolvePostAuthRoute } from '../lib/authRouting';
 import { useAuthStore } from '../store/authStore';
 import { FaApple } from "react-icons/fa";
 import quickdropLogo from "../styles/quickdrop.jpeg"; 
@@ -49,6 +50,7 @@ export const UnifiedSignup = () => {
   };
 
   const handleRoleSelect = (role) => {
+    setFormError('');
     const payload = {
       full_name: tempSignupData.fullName,
       email: tempSignupData.email,
@@ -63,15 +65,12 @@ export const UnifiedSignup = () => {
     mutationFn: unifiedSignup,
     onSuccess: (data) => {
       setSession(data.access_token, data.user, data.account_type);
-      navigate(
-        data.account_type === 'vendor'
-          ? '/vendor/dashboard'
-          : data.account_type === 'rider'
-            ? '/rider/onboarding'
-            : '/onboarding'
-      );
+      navigate(resolvePostAuthRoute(data.account_type, data.user));
     },
-    onError: () => setFormError('Signup failed. Please try again.')
+    onError: (error) => {
+      setShowRoleModal(false);
+      setFormError(error.response?.data?.detail || 'Signup failed. Please try again.');
+    }
   });
 
   const isLoading = signupMutation.isPending;

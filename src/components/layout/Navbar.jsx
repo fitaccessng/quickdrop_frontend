@@ -1,6 +1,9 @@
-import { ShoppingBag, User2 } from "lucide-react";
+import { Bell, ShoppingBag, User2 } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
+import { fetchNotificationUnreadCount } from "../../api/notifications";
+import { useLogout } from "../../hooks/useLogout";
 import { useSessionBootstrap } from "../../hooks/useSessionBootstrap";
 import { formatMoney } from "../../lib/utils";
 import { useAuthStore } from "../../store/authStore";
@@ -10,12 +13,19 @@ import { QuickDropLogo } from "../branding/QuickDropLogo";
 export const Navbar = () => {
   useSessionBootstrap();
   const navigate = useNavigate();
+  const logout = useLogout();
   const user = useAuthStore((state) => state.user);
   const accountType = useAuthStore((state) => state.accountType);
-  const clearSession = useAuthStore((state) => state.clearSession);
   const cartItems = useCartStore((state) => state.items);
+  const unreadQuery = useQuery({
+    queryKey: ["notifications-unread-count", accountType, user?.id],
+    queryFn: fetchNotificationUnreadCount,
+    enabled: Boolean(user),
+    refetchInterval: 10000,
+  });
 
   const cartTotal = cartItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  const unreadCount = unreadQuery.data?.unread_count ?? 0;
 
   return (
     <header className="fixed top-0 z-50 w-full border-b border-white/10 bg-white/80 backdrop-blur-md">
@@ -43,6 +53,18 @@ export const Navbar = () => {
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                onClick={() => navigate("/profile/notifications")}
+                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-900 hover:bg-slate-200"
+              >
+                <Bell size={18} />
+                {unreadCount ? (
+                  <span className="absolute -right-1 -top-1 min-w-[1.1rem] rounded-full bg-[#ff9300] px-1.5 py-0.5 text-[10px] font-black text-white">
+                    {unreadCount}
+                  </span>
+                ) : null}
+              </button>
+              <button
+                type="button"
                 onClick={() => navigate(accountType === "vendor" ? "/vendor/dashboard" : accountType === "rider" ? "/rider/dashboard" : "/dashboard")}
                 className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-slate-200 transition-colors"
               >
@@ -51,10 +73,7 @@ export const Navbar = () => {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  clearSession();
-                  navigate("/login");
-                }}
+                onClick={() => logout()}
                 className="rounded-full bg-black px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
               >
                 Sign out

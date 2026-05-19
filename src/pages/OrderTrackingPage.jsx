@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { fetchOrderTracking } from "../api/orders";
 import { LiveRiderMap } from "../components/tracking/LiveRiderMap";
+import { useRideRealtime } from "../hooks/useRideRealtime";
+import { useOrderRealtime } from "../hooks/useOrderRealtime";
 
 export const OrderTrackingPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [liveData, setLiveData] = useState(null);
+  const isRideTracking = Boolean(id?.startsWith("ride_"));
 
   const trackingQuery = useQuery({
     queryKey: ["tracking", id],
@@ -15,9 +19,36 @@ export const OrderTrackingPage = () => {
     refetchInterval: 12000,
   });
 
-  const orderData = trackingQuery.data;
+  useEffect(() => {
+    if (trackingQuery.data) {
+      setLiveData(trackingQuery.data);
+    }
+  }, [trackingQuery.data]);
+
+  useRideRealtime({
+    rideId: isRideTracking ? id : null,
+    enabled: isRideTracking,
+    onRideEvent: (payload) => {
+      if (payload.ride) {
+        setLiveData(payload.ride);
+      }
+    },
+  });
+  useOrderRealtime({
+    orderId: !isRideTracking ? id : null,
+    enabled: Boolean(id && !isRideTracking),
+    onOrderEvent: (payload) => {
+      if (payload.order) {
+        setLiveData(payload.order);
+      }
+    },
+  });
+
+  const orderData = liveData;
   const isLoading = trackingQuery.isLoading;
   const isError = trackingQuery.isError;
+  const riderPhone = orderData?.rider?.phone ?? "";
+  const riderPhoneHref = riderPhone ? `tel:${String(riderPhone).replace(/\s+/g, "")}` : null;
 
   // Design Constants
   const signatureGradient = "linear-gradient(135deg, #b61321 0%, #ff7670 100%)";
@@ -40,8 +71,8 @@ export const OrderTrackingPage = () => {
     const rideStatusMap = {
       searching: "Finding Rider",
       accepted: "Rider Accepted",
-      en_route: "On the way",
-      arrived: "Arrived",
+      arriving: "Arriving",
+      on_trip: "On trip",
       completed: "Completed",
       cancelled: "Cancelled"
     };
@@ -62,8 +93,8 @@ export const OrderTrackingPage = () => {
       const rideStatusOrder = {
         searching: 0,
         accepted: 1,
-        en_route: 2,
-        arrived: 3,
+        arriving: 2,
+        on_trip: 3,
         completed: 4,
         cancelled: 0
       };
@@ -87,7 +118,7 @@ export const OrderTrackingPage = () => {
   const getTimelineSteps = () => {
     const isRide = orderData?.vehicle_type !== undefined;
     if (isRide) {
-      return ['Searching', 'Accepted', 'En Route', 'Arrived', 'Completed'];
+      return ['Searching', 'Accepted', 'Arriving', 'On Trip', 'Completed'];
     } else {
       return ['Order Received', 'Confirmed', 'Preparing', 'On the way', 'Delivered'];
     }
@@ -155,9 +186,12 @@ export const OrderTrackingPage = () => {
 
       <main className="relative pt-16">
         <LiveRiderMap
-          latitude={orderData?.tracking_latitude}
-          longitude={orderData?.tracking_longitude}
-          riderName={orderData?.rider?.full_name || orderData?.driver_name}
+          latitude={orderData?.tracking_latitude ?? orderData?.rider_location?.latitude}
+          longitude={orderData?.tracking_longitude ?? orderData?.rider_location?.longitude}
+          destinationLatitude={orderData?.destination_latitude}
+          destinationLongitude={orderData?.destination_longitude}
+          routeGeometry={orderData?.route_geometry}
+          riderName={orderData?.rider?.full_name}
           status={orderData?.status}
           title={orderData?.vehicle_type ? "Ride Map" : (orderData?.order_reference || "Order map")}
           subtitle={orderData?.vehicle_type ? "Ride tracking" : "Customer live map"}
@@ -190,6 +224,17 @@ export const OrderTrackingPage = () => {
                 </div>
                 <p className="mt-1 text-xs font-bold text-slate-400 italic">Auto-refreshing live</p>
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <TrackingStat
+                label="ETA"
+                value={orderData?.estimated_arrival_seconds ? `${Math.max(1, Math.round(orderData.estimated_arrival_seconds / 60))} min` : "Pending"}
+              />
+              <TrackingStat
+                label="Distance"
+                value={orderData?.distance_meters_remaining ? `${(orderData.distance_meters_remaining / 1000).toFixed(1)} km` : "Pending"}
+              />
             </div>
 
             {/* Kinetic Status Stepper */}
@@ -244,7 +289,7 @@ export const OrderTrackingPage = () => {
                 <div>
                   <h3 className="font-black text-sm text-slate-900">
                     {orderData?.vehicle_type ? (
-                      orderData?.driver_name ? orderData.driver_name : 'Finding Rider...'
+                      orderData?.rider?.full_name ? orderData.rider.full_name : 'Finding Rider...'
                     ) : (
                       orderData?.rider?.full_name
                         ? orderData.rider.full_name
@@ -264,22 +309,22 @@ export const OrderTrackingPage = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                {orderData?.vehicle_type && orderData?.driver_phone ? (
-                  <>
-                    <button className="bg-white p-3 rounded-xl text-slate-600 shadow-sm active:scale-90 transition-transform">
-                      <span className="material-symbols-outlined" style={materialIconFill}>call</span>
-                    </button>
-                    <button 
-                      className="p-3 rounded-xl text-white shadow-lg active:scale-90 transition-transform"
-                      style={{ background: signatureGradient }}
-                    >
-                      <span className="material-symbols-outlined" style={materialIconFill}>chat_bubble</span>
-                    </button>
-                  </>
-                ) : (
-                  <button className="bg-white p-3 rounded-xl text-slate-600 shadow-sm active:scale-90 transition-transform">
+                {riderPhoneHref ? (
+                  <a
+                    href={riderPhoneHref}
+                    title={riderPhone}
+                    className="flex items-center gap-2 rounded-xl bg-white px-3 py-3 text-slate-600 shadow-sm transition-transform active:scale-90"
+                  >
                     <span className="material-symbols-outlined" style={materialIconFill}>call</span>
-                  </button>
+                    <span className="max-w-[112px] truncate text-xs font-black text-slate-700">
+                      {riderPhone}
+                    </span>
+                  </a>
+                ) : (
+                  <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-3 text-slate-400 shadow-sm">
+                    <span className="material-symbols-outlined" style={materialIconFill}>call</span>
+                    <span className="text-xs font-black">No phone</span>
+                  </div>
                 )}
               </div>
             </div>
@@ -341,3 +386,10 @@ export const OrderTrackingPage = () => {
     </div>
   );
 };
+
+const TrackingStat = ({ label, value }) => (
+  <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
+    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{label}</p>
+    <p className="mt-2 text-lg font-extrabold text-slate-900">{value}</p>
+  </div>
+);

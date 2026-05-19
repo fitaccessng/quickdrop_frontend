@@ -1,18 +1,29 @@
-import React, { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
 import { fetchProducts } from "../api/products";
-import { fetchVendorAnalytics, fetchVendorProfile } from "../api/vendorPortal";
+import { createVendorPromotion, fetchVendorAnalytics, fetchVendorPayouts, fetchVendorProfile, fetchVendorPromotions } from "../api/vendorPortal";
 import { formatMoney } from "../lib/utils";
 import { getInventoryStats } from "../lib/vendorPortal";
 
 export const VendorAnalyticsPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const materialIconFill = { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" };
+  const [promoForm, setPromoForm] = useState({
+    promo_type: "seasonal_discount",
+    product_id: "",
+    title: "",
+    description: "",
+    discount_percent: "",
+  });
+  const [promoMessage, setPromoMessage] = useState("");
 
   const profileQuery = useQuery({ queryKey: ["vendor-profile"], queryFn: fetchVendorProfile });
   const analyticsQuery = useQuery({ queryKey: ["vendor-analytics"], queryFn: fetchVendorAnalytics });
+  const payoutsQuery = useQuery({ queryKey: ["vendor-payouts"], queryFn: fetchVendorPayouts });
+  const promotionsQuery = useQuery({ queryKey: ["vendor-promotions"], queryFn: fetchVendorPromotions });
   const productsQuery = useQuery({
     queryKey: ["vendor-products-analytics", profileQuery.data?.id],
     queryFn: () => fetchProducts({ vendor_id: profileQuery.data.id, include_unavailable: true }),
@@ -24,8 +35,28 @@ export const VendorAnalyticsPage = () => {
 
   const revenues = analytics?.monthly_revenue?.map((item) => item.revenue) || [];
   const maxRev = Math.max(...revenues, 1);
-  const estimatedCommission = (analytics?.total_revenue ?? 0) * 0.15;
-  const estimatedWalletBalance = (analytics?.total_revenue ?? 0) - estimatedCommission;
+  const payoutSummary = payoutsQuery.data;
+  const promotions = promotionsQuery.data ?? analytics?.promotions ?? [];
+
+  const promoMutation = useMutation({
+    mutationFn: createVendorPromotion,
+    onSuccess: () => {
+      setPromoMessage("Promotion submitted for admin review.");
+      setPromoForm({
+        promo_type: "seasonal_discount",
+        product_id: "",
+        title: "",
+        description: "",
+        discount_percent: "",
+      });
+      queryClient.invalidateQueries({ queryKey: ["vendor-promotions"] });
+      queryClient.invalidateQueries({ queryKey: ["vendor-analytics"] });
+    },
+    onError: (error) => {
+      const detail = error?.response?.data?.detail;
+      setPromoMessage(typeof detail === "string" ? detail : "Unable to submit promotion right now.");
+    },
+  });
 
   return (
     <div className="min-h-screen bg-[#FBFBFB] pt-20 font-body antialiased text-slate-900 pb-32">
@@ -39,7 +70,7 @@ export const VendorAnalyticsPage = () => {
         <div className="h-10 w-10 overflow-hidden rounded-full border-2 border-white shadow-sm">
           <img
             alt="Vendor Profile"
-            src={profileQuery.data?.logo_url || "https://via.placeholder.com/150"}
+            src={profileQuery.data?.logo_url || "/favicon.svg"}
             className="h-full w-full object-cover"
           />
         </div>
@@ -64,11 +95,11 @@ export const VendorAnalyticsPage = () => {
             <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-6">
               <div>
                 <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Wallet Balance</p>
-                <p className="text-lg font-black">{formatMoney(estimatedWalletBalance)}</p>
-              </div>
-              <div>
-                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Platform Fee</p>
-                <p className="text-lg font-black text-slate-400">{formatMoney(estimatedCommission)}</p>
+                  <p className="text-lg font-black">{formatMoney(payoutSummary?.available_balance ?? 0)}</p>
+               </div>
+               <div>
+                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Pending Requests</p>
+                <p className="text-lg font-black text-slate-400">{formatMoney(payoutSummary?.pending_request_total ?? 0)}</p>
               </div>
             </div>
           </div>
@@ -107,7 +138,7 @@ export const VendorAnalyticsPage = () => {
             {analytics?.top_products?.map((product, index) => (
               <div key={index} className="group rounded-[2rem] bg-white p-3.5 flex items-center gap-4 border border-slate-100 shadow-sm transition-all active:scale-[0.98]">
                 <div className="w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-50 border border-slate-100">
-                  <img src={`https://picsum.photos/seed/${index}/200`} className="w-full h-full object-cover opacity-80" alt="product" />
+                  <img src={productsQuery.data?.find((item) => item.name === product.name)?.image_url || productsQuery.data?.find((item) => item.name === product.name)?.image_urls?.[0] || "/favicon.svg"} className="w-full h-full object-cover opacity-80" alt="product" />
                 </div>
                 <div className="flex-grow">
                   <h5 className="font-bold text-slate-900 text-sm">{product.name}</h5>
@@ -141,11 +172,87 @@ export const VendorAnalyticsPage = () => {
               <span className="text-[#ff9300] text-[10px] font-black uppercase tracking-[0.2em]">Marketing</span>
               <h5 className="text-2xl font-black font-headline leading-tight">Boost your reach.</h5>
               <p className="text-sm text-slate-400 font-medium leading-relaxed">Run seasonal discounts or highlight your best sellers to South African foodies.</p>
-              <button className="pt-2 text-slate-900 font-bold text-sm flex items-center gap-2">
-                Configure Promos <span className="material-symbols-outlined text-sm">arrow_forward</span>
-              </button>
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  promoMutation.mutate({
+                    ...promoForm,
+                    product_id: promoForm.product_id ? Number(promoForm.product_id) : null,
+                    discount_percent: promoForm.discount_percent ? Number(promoForm.discount_percent) : null,
+                  });
+                }}
+                className="space-y-3 pt-2"
+              >
+                <select
+                  value={promoForm.promo_type}
+                  onChange={(event) => setPromoForm((current) => ({ ...current, promo_type: event.target.value }))}
+                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 outline-none"
+                >
+                  <option value="seasonal_discount">Seasonal Discount</option>
+                  <option value="best_seller">Highlight Best Seller</option>
+                </select>
+                <select
+                  value={promoForm.product_id}
+                  onChange={(event) => setPromoForm((current) => ({ ...current, product_id: event.target.value }))}
+                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 outline-none"
+                >
+                  <option value="">Choose Product</option>
+                  {(productsQuery.data ?? []).map((product) => (
+                    <option key={product.id} value={product.id}>{product.name}</option>
+                  ))}
+                </select>
+                <input
+                  value={promoForm.title}
+                  onChange={(event) => setPromoForm((current) => ({ ...current, title: event.target.value }))}
+                  placeholder="Campaign title"
+                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 outline-none placeholder:text-slate-400"
+                />
+                <textarea
+                  rows={3}
+                  value={promoForm.description}
+                  onChange={(event) => setPromoForm((current) => ({ ...current, description: event.target.value }))}
+                  placeholder="What should foodies know about this promo?"
+                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400"
+                />
+                <input
+                  value={promoForm.discount_percent}
+                  onChange={(event) => setPromoForm((current) => ({ ...current, discount_percent: event.target.value }))}
+                  placeholder="Discount % (optional)"
+                  className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 outline-none placeholder:text-slate-400"
+                />
+                <button className="rounded-full bg-slate-900 px-5 py-3 text-sm font-black uppercase tracking-widest text-white">
+                  {promoMutation.isPending ? "Submitting..." : "Configure Promos"}
+                </button>
+                {promoMessage ? <p className="text-sm font-bold text-slate-600">{promoMessage}</p> : null}
+              </form>
            </div>
            <span className="material-symbols-outlined absolute -right-4 -bottom-4 text-slate-50 text-[120px] select-none">campaign</span>
+        </section>
+
+        <section className="rounded-[2rem] bg-white p-6 border border-slate-100 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="font-headline text-xl font-extrabold tracking-tight">Promo Status</h4>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Admin approval required</span>
+          </div>
+          <div className="mt-5 space-y-3">
+            {promotions.length ? promotions.map((promo) => (
+              <div key={promo.id} className="rounded-[1.5rem] bg-slate-50 px-4 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">{promo.title}</p>
+                    <p className="text-xs text-slate-500">{promo.product_name || "All products"} • {promo.promo_type.replaceAll("_", " ")}</p>
+                  </div>
+                  <span className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-wider ${
+                    promo.status === "approved" ? "bg-emerald-100 text-emerald-700" : promo.status === "rejected" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"
+                  }`}>
+                    {promo.status}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm text-slate-600">{promo.description}</p>
+                {promo.admin_note ? <p className="mt-2 text-xs font-bold text-slate-500">Admin note: {promo.admin_note}</p> : null}
+              </div>
+            )) : <p className="text-sm text-slate-500">No promotions submitted yet.</p>}
+          </div>
         </section>
       </main>
 

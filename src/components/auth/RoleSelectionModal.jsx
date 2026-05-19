@@ -8,15 +8,22 @@ export const RoleSelectionModal = ({ isOpen, onSelectRole, isLoading }) => {
   const roles = [
     {
       id: 'customer',
-      title: 'Customer',
-      description: 'Browse and order from vendors in your area',
+      title: 'User',
+      description: 'Book deliveries and track riders in real time',
       icon: 'shopping_cart',
-      color: 'from-blue-400 to-blue-600',
+      color: 'from-sky-400 to-cyan-600',
+    },
+    {
+      id: 'rider',
+      title: 'Rider',
+      description: 'Receive dispatches, go live, and complete trips',
+      icon: 'two_wheeler',
+      color: 'from-emerald-400 to-green-600',
     },
     {
       id: 'vendor',
-      title: 'Merchant',
-      description: 'Sell your products and manage orders',
+      title: 'Business',
+      description: 'Launch your storefront and manage logistics',
       icon: 'storefront',
       color: 'from-orange-400 to-orange-600',
     },
@@ -52,7 +59,7 @@ export const RoleSelectionModal = ({ isOpen, onSelectRole, isLoading }) => {
         </div>
 
         <p className="text-xs text-slate-400 text-center mt-6">
-          You can change your role later in settings
+          Each role gets its own first-time onboarding after signup.
         </p>
       </div>
     </div>

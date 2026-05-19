@@ -25,6 +25,16 @@ export const fetchVendorAnalytics = async () => {
   return data;
 };
 
+export const fetchVendorPromotions = async () => {
+  const { data } = await http.get("/vendors/me/promotions");
+  return data;
+};
+
+export const createVendorPromotion = async (payload) => {
+  const { data } = await http.post("/vendors/me/promotions", payload);
+  return data;
+};
+
 export const fetchVendorOrders = async () => {
   const { data } = await http.get("/orders/vendor/history");
   return data;

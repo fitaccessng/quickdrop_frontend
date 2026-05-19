@@ -1,20 +1,31 @@
 import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
+import { fetchNotificationUnreadCount } from "../../api/notifications";
+import { resolveApiBaseUrl } from "../../api/http";
 import { useAuthStore } from "../../store/authStore";
 import { useUiStore } from "../../store/uiStore";
 import { QuickDropLogo } from "../branding/QuickDropLogo";
+import { RealtimeNotifications } from "../layout/RealtimeNotifications";
 
 export const RiderShell = ({ title, subtitle, children, active = "dashboard", back = false }) => {
   const navigate = useNavigate();
   const theme = useUiStore((state) => state.theme);
   const toggleTheme = useUiStore((state) => state.toggleTheme);
   const token = useAuthStore((state) => state.token);
+  const unreadQuery = useQuery({
+    queryKey: ["notifications-unread-count", "rider-shell"],
+    queryFn: fetchNotificationUnreadCount,
+    enabled: Boolean(token),
+    refetchInterval: 10000,
+  });
+  const unreadCount = unreadQuery.data?.unread_count ?? 0;
 
   useEffect(() => {
     const markOffline = () => {
       if (!token) return;
-      fetch(`${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000"}/rider/me/profile`, {
+      fetch(`${resolveApiBaseUrl()}/rider/me/profile`, {
         method: "PUT",
         keepalive: true,
         headers: {
@@ -35,6 +46,7 @@ export const RiderShell = ({ title, subtitle, children, active = "dashboard", ba
 
   return (
     <div className={`min-h-screen pb-28 ${theme === "dark" ? "bg-slate-950 text-slate-50" : "bg-[#f7f6f1] text-slate-900"}`}>
+      <RealtimeNotifications />
       <header className={`sticky top-0 z-40 px-5 py-4 backdrop-blur-xl ${theme === "dark" ? "border-b border-slate-800 bg-slate-950/90" : "border-b border-white/60 bg-[#f7f6f1]/90"}`}>
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
@@ -59,6 +71,9 @@ export const RiderShell = ({ title, subtitle, children, active = "dashboard", ba
             <button onClick={toggleTheme} className="rounded-2xl bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-700 shadow-sm">
               {theme === "dark" ? "Light" : "Dark"}
             </button>
+            <Link to="/profile/notifications" className="rounded-2xl bg-white px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-700 shadow-sm">
+              Bell{unreadCount ? ` (${unreadCount})` : ""}
+            </Link>
             <Link to="/rider/wallet" className="rounded-2xl bg-slate-900 px-4 py-2 text-xs font-black uppercase tracking-widest text-white">
               Wallet
             </Link>
@@ -73,7 +88,7 @@ export const RiderShell = ({ title, subtitle, children, active = "dashboard", ba
           <RiderNavLink to="/rider/dashboard" label="Home" icon="home" active={active === "dashboard"} />
           <RiderNavLink to="/rider/order-requests" label="Requests" icon="notifications_active" active={active === "requests"} />
           <RiderNavLink to="/rider/analytics" label="Insights" icon="insights" active={active === "analytics"} />
-          <RiderNavLink to="/rider/orders" label="Orders" icon="local_shipping" active={active === "orders"} />
+          <RiderNavLink to="/rider/navigate" label="Dispatch" icon="local_shipping" active={active === "orders"} />
           <RiderNavLink to="/rider/wallet" label="Wallet" icon="account_balance_wallet" active={active === "wallet"} />
           <RiderNavLink to="/rider/profile" label="Profile" icon="person" active={active === "profile"} />
         </div>

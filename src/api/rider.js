@@ -35,6 +35,11 @@ export const acceptRiderOrder = async ({ orderId, ...payload }) => {
   return data;
 };
 
+export const rejectRiderOrder = async ({ orderId }) => {
+  const { data } = await http.post(`/rider/orders/${orderId}/reject`);
+  return data;
+};
+
 export const updateRiderOrder = async ({ orderId, ...payload }) => {
   const { data } = await http.patch(`/rider/orders/${orderId}`, payload);
   return data;
@@ -57,5 +62,12 @@ export const createRiderPayoutRequest = async (payload) => {
 
 export const fetchRiderTracking = async (orderId) => {
   const { data } = await http.get(`/rider/orders/${orderId}/tracking`);
+  return data;
+};
+
+export const fetchRiderRoute = async ({ orderId, start_latitude, start_longitude }) => {
+  const { data } = await http.get(`/rider/orders/${orderId}/route`, {
+    params: { start_latitude, start_longitude },
+  });
   return data;
 };

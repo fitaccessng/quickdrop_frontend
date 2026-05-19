@@ -51,7 +51,7 @@ export const AboutPage = () => {
             <div className="flex items-center gap-6">
               <Link to="/" className="font-bold text-slate-700 hover:text-[#ff9300] transition-colors">Home</Link>
               <Link to="/about" className="font-bold text-[#ff9300] transition-colors">About</Link>
-              <Link to="/vendor/signup" className="font-bold text-slate-700 hover:text-[#ff9300] transition-colors">Become a Partner</Link>
+              <Link to="/signup" className="font-bold text-slate-700 hover:text-[#ff9300] transition-colors">Become a Partner</Link>
             </div>
             
             <div className="h-6 w-px bg-slate-200 mx-2"></div>
@@ -81,7 +81,7 @@ export const AboutPage = () => {
           <div className="absolute top-full left-0 right-0 bg-white border-t border-slate-100 p-6 flex flex-col gap-4 md:hidden shadow-2xl">
             <Link to="/" className="text-slate-800 font-bold text-lg py-2" onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
             <Link to="/about" className="text-[#ff9300] font-bold text-lg py-2" onClick={() => setIsMobileMenuOpen(false)}>About</Link>
-            <Link to="/vendor/signup" className="text-slate-800 font-bold text-lg py-2" onClick={() => setIsMobileMenuOpen(false)}>Become a Partner</Link>
+            <Link to="/signup" className="text-slate-800 font-bold text-lg py-2" onClick={() => setIsMobileMenuOpen(false)}>Become a Partner</Link>
             <hr className="border-slate-100" />
             <Link to="/login" className="text-slate-800 font-bold text-lg py-2" onClick={() => setIsMobileMenuOpen(false)}>Sign In</Link>
             <Link to="/signup" style={{ backgroundColor: "#ff9300" }} className="text-white text-center py-4 rounded-2xl font-bold" onClick={() => setIsMobileMenuOpen(false)}>

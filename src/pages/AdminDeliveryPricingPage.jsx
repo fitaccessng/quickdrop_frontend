@@ -15,6 +15,10 @@ export const AdminDeliveryPricingPage = () => {
     base_fee: "0",
     fee_per_km: "0",
     free_distance_km: "0",
+    bike_surcharge: "0",
+    car_surcharge: "0",
+    xl_surcharge: "0",
+    rider_payout_percentage: "30",
   });
   const [message, setMessage] = useState("");
 
@@ -24,6 +28,10 @@ export const AdminDeliveryPricingPage = () => {
         base_fee: String(settingsQuery.data.base_fee ?? 0),
         fee_per_km: String(settingsQuery.data.fee_per_km ?? 0),
         free_distance_km: String(settingsQuery.data.free_distance_km ?? 0),
+        bike_surcharge: String(settingsQuery.data.bike_surcharge ?? 0),
+        car_surcharge: String(settingsQuery.data.car_surcharge ?? 0),
+        xl_surcharge: String(settingsQuery.data.xl_surcharge ?? 0),
+        rider_payout_percentage: String(settingsQuery.data.rider_payout_percentage ?? 30),
       });
     }
   }, [settingsQuery.data]);
@@ -42,9 +50,13 @@ export const AdminDeliveryPricingPage = () => {
   const previewBase = Number(form.base_fee || 0);
   const previewPerKm = Number(form.fee_per_km || 0);
   const previewFreeDistance = Number(form.free_distance_km || 0);
+  const previewBike = Number(form.bike_surcharge || 0);
+  const previewCar = Number(form.car_surcharge || 0);
+  const previewXl = Number(form.xl_surcharge || 0);
+  const previewPayout = Number(form.rider_payout_percentage || 0);
   const sampleDistance = 8;
   const sampleBillableDistance = Math.max(sampleDistance - previewFreeDistance, 0);
-  const sampleTotal = previewBase + sampleBillableDistance * previewPerKm;
+  const sampleTotal = previewBase + sampleBillableDistance * previewPerKm + previewBike;
 
   return (
     <AdminShell title="Delivery Pricing" subtitle="Control the base charge and per-kilometer delivery pricing used during checkout.">
@@ -59,6 +71,10 @@ export const AdminDeliveryPricingPage = () => {
                 base_fee: Number(form.base_fee),
                 fee_per_km: Number(form.fee_per_km),
                 free_distance_km: Number(form.free_distance_km),
+                bike_surcharge: Number(form.bike_surcharge),
+                car_surcharge: Number(form.car_surcharge),
+                xl_surcharge: Number(form.xl_surcharge),
+                rider_payout_percentage: Number(form.rider_payout_percentage),
               });
             }}
             className="mt-5 space-y-4"
@@ -78,6 +94,26 @@ export const AdminDeliveryPricingPage = () => {
               value={form.free_distance_km}
               onChange={(value) => setForm((current) => ({ ...current, free_distance_km: value }))}
             />
+            <NumberField
+              label="Bike Added Cost"
+              value={form.bike_surcharge}
+              onChange={(value) => setForm((current) => ({ ...current, bike_surcharge: value }))}
+            />
+            <NumberField
+              label="Car Added Cost"
+              value={form.car_surcharge}
+              onChange={(value) => setForm((current) => ({ ...current, car_surcharge: value }))}
+            />
+            <NumberField
+              label="XL Added Cost"
+              value={form.xl_surcharge}
+              onChange={(value) => setForm((current) => ({ ...current, xl_surcharge: value }))}
+            />
+            <NumberField
+              label="Rider Payout %"
+              value={form.rider_payout_percentage}
+              onChange={(value) => setForm((current) => ({ ...current, rider_payout_percentage: value }))}
+            />
             {message ? <p className="rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">{message}</p> : null}
             <button disabled={mutation.isPending} className="rounded-2xl bg-slate-900 px-5 py-4 text-sm font-black uppercase tracking-widest text-white">
               {mutation.isPending ? "Saving..." : "Save Pricing"}
@@ -90,6 +126,12 @@ export const AdminDeliveryPricingPage = () => {
             <PricingCard label="Base Fee" value={formatMoney(previewBase)} />
             <PricingCard label="Per KM" value={formatMoney(previewPerKm)} accent />
             <PricingCard label="Free KM" value={previewFreeDistance} />
+          </div>
+          <div className="grid gap-4 md:grid-cols-4">
+            <PricingCard label="Bike Add-on" value={formatMoney(previewBike)} />
+            <PricingCard label="Car Add-on" value={formatMoney(previewCar)} />
+            <PricingCard label="XL Add-on" value={formatMoney(previewXl)} />
+            <PricingCard label="Rider %" value={`${previewPayout}%`} />
           </div>
 
           <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
@@ -108,6 +150,14 @@ export const AdminDeliveryPricingPage = () => {
                 <div className="flex justify-between">
                   <span className="text-slate-500">Distance fee</span>
                   <span className="font-bold text-slate-900">{formatMoney(sampleBillableDistance * previewPerKm)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Bike vehicle add-on</span>
+                  <span className="font-bold text-slate-900">{formatMoney(previewBike)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Rider payout on sample fee</span>
+                  <span className="font-bold text-slate-900">{formatMoney((sampleTotal * previewPayout) / 100)}</span>
                 </div>
                 <div className="flex justify-between border-t border-slate-200 pt-3">
                   <span className="font-black uppercase tracking-widest text-[#ff9300]">Estimated total</span>

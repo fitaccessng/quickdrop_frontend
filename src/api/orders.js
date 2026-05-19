@@ -1,4 +1,6 @@
-import http from "./http";
+import http, { resolveApiBaseUrl } from "./http";
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 export const submitOrder = async (payload) => {
   const { data } = await http.post("/orders", payload);
@@ -7,6 +9,11 @@ export const submitOrder = async (payload) => {
 
 export const fetchOrderQuote = async (payload) => {
   const { data } = await http.post("/orders/quote", payload);
+  return data;
+};
+
+export const initializePaystackCheckout = async (payload) => {
+  const { data } = await http.post("/orders/paystack/initialize", payload);
   return data;
 };
 
@@ -29,4 +36,14 @@ export const fetchOrderTracking = async (id) => {
 export const fetchUserOrders = async () => {
   const { data } = await http.get("/orders/user/history");
   return data;
+};
+
+export const buildOrderSocketUrl = ({ token, orderId }) => {
+  const baseUrl = new URL(API_BASE_URL, typeof window !== "undefined" ? window.location.origin : "http://localhost:8000");
+  const socketOrigin = `${baseUrl.protocol === "https:" ? "wss:" : "ws:"}//${baseUrl.host}`;
+  const basePath = baseUrl.pathname.replace(/\/$/, "");
+  const url = new URL(`${basePath}/orders/ws`, socketOrigin);
+  url.searchParams.set("token", token);
+  url.searchParams.set("order_id", orderId);
+  return url.toString();
 };

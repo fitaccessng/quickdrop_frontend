@@ -1,13 +1,45 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from "@tanstack/react-query";
-import { fetchCustomerNotifications } from "../api/notifications";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { clearNotifications, fetchNotificationFeed, markAllNotificationsRead, markNotificationRead } from "../api/notifications";
+import { useAuthStore } from "../store/authStore";
 
 export const NotificationsPage = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const token = useAuthStore((state) => state.token);
+  const accountType = useAuthStore((state) => state.accountType);
+  const userId = useAuthStore((state) => state.user?.id);
   const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ["customer-notifications"],
-    queryFn: fetchCustomerNotifications,
+    queryKey: ["notifications-feed", accountType, userId, "page"],
+    queryFn: () => fetchNotificationFeed({ limit: 100 }),
+    enabled: Boolean(token && accountType && userId),
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
+  });
+
+  const readMutation = useMutation({
+    mutationFn: markNotificationRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications-feed"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread-count"] });
+    },
+  });
+
+  const readAllMutation = useMutation({
+    mutationFn: markAllNotificationsRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications-feed"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread-count"] });
+    },
+  });
+
+  const clearMutation = useMutation({
+    mutationFn: clearNotifications,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications-feed"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread-count"] });
+    },
   });
 
   return (
@@ -21,7 +53,22 @@ export const NotificationsPage = () => {
             <span className="material-symbols-outlined text-slate-600">arrow_back</span>
           </button>
           <h1 className="text-lg font-black text-slate-800">Notifications</h1>
-          <div className="w-10" />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => readAllMutation.mutate()}
+              className="text-[10px] font-black uppercase tracking-widest text-slate-500"
+            >
+              Read All
+            </button>
+            <button
+              type="button"
+              onClick={() => clearMutation.mutate()}
+              className="text-[10px] font-black uppercase tracking-widest text-rose-500"
+            >
+              Clear
+            </button>
+          </div>
         </div>
       </div>
 
@@ -33,9 +80,18 @@ export const NotificationsPage = () => {
         ) : notifications.length ? (
           <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/60 shadow-sm">
             {notifications.map((item, index) => (
-              <div
+              <button
                 key={item.id}
-                className={`p-5 ${index !== notifications.length - 1 ? 'border-b border-slate-50' : ''}`}
+                type="button"
+                onClick={() => {
+                  if (!item.is_read) {
+                    readMutation.mutate(item.id);
+                  }
+                  if (item.action_url) {
+                    navigate(item.action_url);
+                  }
+                }}
+                className={`w-full p-5 text-left ${index !== notifications.length - 1 ? 'border-b border-slate-50' : ''}`}
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -52,7 +108,7 @@ export const NotificationsPage = () => {
                 <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-slate-300">
                   {new Date(item.created_at).toLocaleString()}
                 </p>
-              </div>
+              </button>
             ))}
           </div>
         ) : (

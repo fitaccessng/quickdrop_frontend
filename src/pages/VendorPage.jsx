@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, ChevronRight } from "lucide-react";
@@ -17,6 +17,13 @@ export const VendorPage = () => {
   const cartItems = useCartStore((state) => state.items);
   const [flash, setFlash] = useState("");
   const [activeCategory, setActiveCategory] = useState("Most Popular");
+  const [customerLocation, setCustomerLocation] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("quickdrop-customer-location") || "null");
+    } catch {
+      return null;
+    }
+  });
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -45,6 +52,38 @@ export const VendorPage = () => {
   const deliveryTime = vendor?.prep_time_minutes ?? 20;
   const deliveryFee = vendor?.delivery_fee ?? 0;
   const vendorRating = vendor?.rating ?? 4.8;
+  const distanceLabel = useMemo(() => {
+    if (!customerLocation || vendor?.latitude == null || vendor?.longitude == null) {
+      return vendor?.city || "Vendor location";
+    }
+    const toRadians = (value) => (value * Math.PI) / 180;
+    const earthRadiusKm = 6371;
+    const dLat = toRadians(vendor.latitude - customerLocation.latitude);
+    const dLng = toRadians(vendor.longitude - customerLocation.longitude);
+    const startLat = toRadians(customerLocation.latitude);
+    const endLat = toRadians(vendor.latitude);
+    const arc =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(startLat) * Math.cos(endLat) * Math.sin(dLng / 2) ** 2;
+    const distance = 2 * earthRadiusKm * Math.asin(Math.sqrt(arc));
+    return `${distance.toFixed(1)} km from you`;
+  }, [customerLocation, vendor?.city, vendor?.latitude, vendor?.longitude]);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const nextLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        setCustomerLocation(nextLocation);
+        localStorage.setItem("quickdrop-customer-location", JSON.stringify(nextLocation));
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 300000, timeout: 10000 },
+    );
+  }, []);
 
   if (vendorQuery.isLoading || productsQuery.isLoading) {
     return (
@@ -135,6 +174,9 @@ export const VendorPage = () => {
                 </div>
                 <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">Fee</span>
               </div>
+            </div>
+            <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-xs font-bold text-slate-500">
+              Customer location: {distanceLabel}
             </div>
           </div>
         </section>

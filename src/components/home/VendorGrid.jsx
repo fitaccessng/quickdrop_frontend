@@ -24,8 +24,8 @@ export const VendorGrid = ({ vendors, isLoading }) => {
       {vendors.map((vendor) => (
         <Link key={vendor.id} to={`/vendor/${vendor.id}`} className="overflow-hidden rounded-[1.8rem] bg-white/[0.05]">
           <div className="h-48 bg-gradient-to-r from-base-800 to-base-700">
-            {vendor.cover_image_url ? (
-              <img src={vendor.cover_image_url} alt={vendor.name} className="h-full w-full object-cover" />
+            {vendor.cover_image_url || vendor.logo_url ? (
+              <img src={vendor.cover_image_url || vendor.logo_url} alt={vendor.name} className="h-full w-full object-cover" />
             ) : null}
           </div>
           <div className="space-y-4 p-5">

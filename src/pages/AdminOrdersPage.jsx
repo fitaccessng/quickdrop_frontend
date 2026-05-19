@@ -63,6 +63,22 @@ export const AdminOrdersPage = () => {
                 </Link>
               ) : null}
             </div>
+            {order.items?.length ? (
+              <div className="mt-4 rounded-[1.5rem] bg-slate-50 p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Ordered Items</p>
+                <div className="mt-3 space-y-2">
+                  {order.items.map((item) => (
+                    <div key={item.id} className="flex items-start justify-between gap-3 text-sm">
+                      <div>
+                        <p className="font-bold text-slate-900">{item.quantity}x {item.product_name}</p>
+                        {item.notes ? <p className="text-xs text-slate-500">{item.notes}</p> : null}
+                      </div>
+                      <p className="font-bold text-slate-700">{formatMoney(item.total_price)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         ))}
       </div>

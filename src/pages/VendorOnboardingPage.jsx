@@ -155,7 +155,7 @@ export const VendorOnboardingPage = () => {
               <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
                 <Field label="Business Bio" error={errors.description}>
                   <textarea 
-                    className="w-full bg-slate-50 border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none h-28 resize-none"
+                    className="w-full text-black bg-slate-50 border-none rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none h-28 resize-none"
                     placeholder="Tell customers about your store..."
                     value={form.description}
                     onChange={e => setForm({...form, description: e.target.value})}
@@ -164,7 +164,7 @@ export const VendorOnboardingPage = () => {
 
                 <Field label="Category" error={errors.category}>
                   <select 
-                    className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none appearance-none"
+                    className="w-full text-black bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none appearance-none"
                     value={form.category}
                     onChange={e => setForm({...form, category: e.target.value})}
                   >
@@ -176,7 +176,7 @@ export const VendorOnboardingPage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="City">
                     <select 
-                      className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none"
+                      className="w-full text-black bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none"
                       value={form.city}
                       onChange={e => setForm({...form, city: e.target.value})}
                     >
@@ -184,13 +184,13 @@ export const VendorOnboardingPage = () => {
                     </select>
                   </Field>
                   <Field label="Country">
-                    <input className="w-full bg-slate-100 border-none rounded-2xl py-4 px-4 text-sm font-bold text-slate-400" value="South Africa" readOnly />
+                    <input className="w-full text-black bg-slate-100 border-none rounded-2xl py-4 px-4 text-sm font-bold text-slate-400" value="South Africa" readOnly />
                   </Field>
                 </div>
 
                 <Field label="Street Address">
                   <input 
-                    className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none"
+                    className="w-full text-black bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none"
                     placeholder="123 Precinct St."
                     value={form.street}
                     onChange={e => setForm({...form, street: e.target.value})}
@@ -204,9 +204,35 @@ export const VendorOnboardingPage = () => {
                       <div key={day} className="flex items-center justify-between">
                         <span className="text-xs font-bold text-slate-600 w-16">{day.slice(0, 3)}</span>
                         <div className="flex items-center gap-2">
-                           <input type="time" className="text-[10px] font-bold p-1 rounded bg-white border border-slate-100" value={form.opening_hours[day].open} />
+                           <input
+                             type="time"
+                             className="text-[10px] text-black font-bold p-1 rounded bg-white border border-slate-100"
+                             value={form.opening_hours[day].open}
+                             onChange={e =>
+                               setForm((prev) => ({
+                                 ...prev,
+                                 opening_hours: {
+                                   ...prev.opening_hours,
+                                   [day]: { ...prev.opening_hours[day], open: e.target.value },
+                                 },
+                               }))
+                             }
+                           />
                            <span className="text-slate-300">-</span>
-                           <input type="time" className="text-[10px] font-bold p-1 rounded bg-white border border-slate-100" value={form.opening_hours[day].close} />
+                           <input
+                             type="time"
+                             className="text-[10px] text-black font-bold p-1 rounded bg-white border border-slate-100"
+                             value={form.opening_hours[day].close}
+                             onChange={e =>
+                               setForm((prev) => ({
+                                 ...prev,
+                                 opening_hours: {
+                                   ...prev.opening_hours,
+                                   [day]: { ...prev.opening_hours[day], close: e.target.value },
+                                 },
+                               }))
+                             }
+                           />
                         </div>
                       </div>
                     ))}
@@ -218,17 +244,17 @@ export const VendorOnboardingPage = () => {
             {currentStep === 2 && (
               <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
                 <Field label="SA ID Number">
-                  <input className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.south_african_id_number} onChange={e => setForm({...form, south_african_id_number: e.target.value})} placeholder="900101..." />
+                  <input className="w-full text-black bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.south_african_id_number} onChange={e => setForm({...form, south_african_id_number: e.target.value})} placeholder="900101..." />
                 </Field>
                 <Field label="Business Reg. Number">
-                  <input className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.business_registration_number} onChange={e => setForm({...form, business_registration_number: e.target.value})} placeholder="2024/..." />
+                  <input className="w-full text-black bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.business_registration_number} onChange={e => setForm({...form, business_registration_number: e.target.value})} placeholder="2024/..." />
                 </Field>
                 <div className="grid grid-cols-2 gap-4">
                    <Field label="TIN / Tax No.">
-                     <input className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.tin} onChange={e => setForm({...form, tin: e.target.value})} />
+                     <input className="w-full text-black bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.tin} onChange={e => setForm({...form, tin: e.target.value})} />
                    </Field>
                    <Field label="VAT (Optional)">
-                     <input className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.vat_number} onChange={e => setForm({...form, vat_number: e.target.value})} />
+                     <input className="w-full text-black bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.vat_number} onChange={e => setForm({...form, vat_number: e.target.value})} />
                    </Field>
                 </div>
               </div>
@@ -237,13 +263,13 @@ export const VendorOnboardingPage = () => {
             {currentStep === 3 && (
               <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
                 <Field label="Bank Name">
-                  <input className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.bank_name} onChange={e => setForm({...form, bank_name: e.target.value})} placeholder="e.g. FNB" />
+                  <input className="w-full text-black bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.bank_name} onChange={e => setForm({...form, bank_name: e.target.value})} placeholder="e.g. FNB" />
                 </Field>
                 <Field label="Account Holder">
-                  <input className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.bank_account_name} onChange={e => setForm({...form, bank_account_name: e.target.value})} />
+                  <input className="w-full text-black bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.bank_account_name} onChange={e => setForm({...form, bank_account_name: e.target.value})} />
                 </Field>
                 <Field label="Account Number">
-                  <input className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.bank_account} onChange={e => setForm({...form, bank_account: e.target.value})} />
+                  <input className="w-full text-black bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.bank_account} onChange={e => setForm({...form, bank_account: e.target.value})} />
                 </Field>
               </div>
             )}
@@ -252,10 +278,10 @@ export const VendorOnboardingPage = () => {
               <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="Min Order (R)">
-                    <input type="number" className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.minimum_order_amount} onChange={e => setForm({...form, minimum_order_amount: e.target.value})} />
+                    <input type="number" className="w-full text-black bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.minimum_order_amount} onChange={e => setForm({...form, minimum_order_amount: e.target.value})} />
                   </Field>
                   <Field label="Radius (KM)">
-                    <input type="number" className="w-full bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.delivery_radius_km} onChange={e => setForm({...form, delivery_radius_km: e.target.value})} />
+                    <input type="number" className="w-full text-black bg-slate-50 border-none rounded-2xl py-4 px-4 text-sm font-medium focus:ring-2 focus:ring-[#ff9300] outline-none" value={form.delivery_radius_km} onChange={e => setForm({...form, delivery_radius_km: e.target.value})} />
                   </Field>
                 </div>
                 

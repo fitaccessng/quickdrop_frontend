@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchProducts } from '../api/products';
+import { fetchVendors } from '../api/vendors';
 import { useCartStore } from '../store/cartStore';
 
 export const MarketPage = () => {
@@ -26,9 +27,14 @@ export const MarketPage = () => {
     queryKey: ['products', activeCategory],
     queryFn: () => fetchProducts({ category: activeCategory === 'All' ? undefined : activeCategory }),
   });
+  const vendorsQuery = useQuery({
+    queryKey: ['market-vendors'],
+    queryFn: () => fetchVendors({}),
+  });
 
   const categories = ['All', 'Food', 'Grocery', 'Fashion', 'Pharmacy', 'Electronics', 'Beauty'];
   const products = productsQuery.data || [];
+  const vendorMap = new Map((vendorsQuery.data || []).map((vendor) => [vendor.id, vendor]));
 
   // Filter by search
   const filteredProducts = products.filter(p =>
@@ -51,9 +57,14 @@ export const MarketPage = () => {
 
   const addToCart = (e, product) => {
     e.stopPropagation();
-    // Get first vendor as default, ideally this should come from product data
-    const defaultVendor = { id: product.vendor_id || 1, name: 'Vendor', logo_url: '' };
-    addToCartStore(product, defaultVendor);
+    const vendor = vendorMap.get(product.vendor_id) || {
+      id: product.vendor_id,
+      name: `Vendor #${product.vendor_id}`,
+      logo_url: '',
+      city: '',
+      category: product.category,
+    };
+    addToCartStore(product, vendor);
   };
 
   return (
@@ -143,7 +154,7 @@ export const MarketPage = () => {
                   {/* Visual Area */}
                   <div className="relative h-44 w-full mb-4 overflow-hidden rounded-[2rem] bg-slate-200">
                     <img 
-                      src={product.image} 
+                      src={product.image_url || product.image_urls?.[0] || "/favicon.svg"} 
                       alt={product.name} 
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />

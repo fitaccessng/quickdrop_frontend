@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { unifiedLogin } from '../api/auth';
+import { resolvePostAuthRoute } from '../lib/authRouting';
 import { useAuthStore } from '../store/authStore';
 import { FaApple } from "react-icons/fa";
 import quickdropLogo from "../styles/quickdrop.jpeg";
@@ -24,14 +25,7 @@ export const UnifiedLogin = () => {
     mutationFn: unifiedLogin,
     onSuccess: (data) => {
       setSession(data.access_token, data.user, data.account_type);
-      
-      if (data.account_type === 'vendor') {
-        navigate(data.user?.is_onboarded ? '/vendor/dashboard' : '/vendor/onboarding');
-      } else if (data.account_type === 'rider') {
-        navigate(data.user?.is_onboarded ? '/rider/dashboard' : '/rider/onboarding');
-      } else {
-        navigate(data.user?.is_onboarded ? '/dashboard' : '/onboarding');
-      }
+      navigate(resolvePostAuthRoute(data.account_type, data.user));
     },
     onError: (err) => {
       setFormError(err.response?.data?.detail || 'Invalid email or password');

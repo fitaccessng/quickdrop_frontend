@@ -1,8 +1,29 @@
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+
+import { fetchUserOrders } from '../api/orders';
+import { fetchCurrentRide } from '../api/rides';
 
 export const RidePage = () => {
   const navigate = useNavigate();
+  const ordersQuery = useQuery({
+    queryKey: ['ride-page-user-orders'],
+    queryFn: fetchUserOrders,
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
+  });
+  const currentRideQuery = useQuery({
+    queryKey: ['ride-page-current-ride'],
+    queryFn: fetchCurrentRide,
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
+  });
+
+  const activeOrder = (ordersQuery.data ?? []).find((order) =>
+    ['pending', 'confirmed', 'preparing', 'rider_assigned', 'on_the_way'].includes(order.status),
+  );
+  const currentRide = currentRideQuery.data;
 
   const signatureGradient = {
     background: 'linear-gradient(135deg, #b61321 0%, #ff7670 100%)',
@@ -32,6 +53,33 @@ export const RidePage = () => {
 
       <main className="pt-24 px-6">
         <div className="flex flex-col items-center justify-center pt-20">
+          {activeOrder || currentRide ? (
+            <div className="w-full max-w-sm mb-8 space-y-3">
+              {activeOrder ? (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/tracking/${activeOrder.id}`)}
+                  className="w-full rounded-[2rem] bg-white p-5 text-left shadow-sm border border-slate-100"
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-600">Active Order</p>
+                  <h3 className="mt-2 text-lg font-black text-slate-900">See live rider location</h3>
+                  <p className="mt-1 text-sm font-medium text-slate-500">{activeOrder.vendor?.name || 'Vendor'} • {activeOrder.status.replaceAll('_', ' ')}</p>
+                </button>
+              ) : null}
+              {currentRide ? (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/tracking/${currentRide.ride_id}`)}
+                  className="w-full rounded-[2rem] bg-white p-5 text-left shadow-sm border border-slate-100"
+                >
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-600">Current Ride</p>
+                  <h3 className="mt-2 text-lg font-black text-slate-900">Track your rider in real time</h3>
+                  <p className="mt-1 text-sm font-medium text-slate-500">{currentRide.status.replaceAll('_', ' ')} • {currentRide.vehicle_type}</p>
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
           <div className="w-32 h-32 bg-gradient-to-br from-rose-100 to-pink-100 rounded-full flex items-center justify-center mb-8 shadow-lg">
             <span className="material-symbols-outlined text-6xl text-rose-600" style={materialIconFill}>two_wheeler</span>
           </div>
@@ -72,6 +120,14 @@ export const RidePage = () => {
             className="w-full max-w-sm py-4 px-8 rounded-2xl text-white text-base font-black uppercase tracking-widest shadow-xl active:scale-95 transition-transform mb-4"
           >
             Request a Ride
+          </button>
+
+          <button 
+            type="button"
+            onClick={() => navigate('/request-rider')}
+            className="w-full max-w-sm py-3 px-8 rounded-2xl text-slate-900 text-sm font-bold uppercase tracking-widest border-2 border-slate-200 hover:bg-slate-50 active:scale-95 transition-transform mb-4"
+          >
+            Send Rider To Pick Item
           </button>
 
           <button 

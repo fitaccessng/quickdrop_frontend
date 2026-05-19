@@ -4,11 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 
 import { fetchProfile } from '../api/auth';
 import { fetchUserOrders } from '../api/orders';
-import { useAuthStore } from '../store/authStore';
+import { useLogout } from '../hooks/useLogout';
 
 export const ProfilePage = () => {
   const navigate = useNavigate();
-  const clearSession = useAuthStore((state) => state.clearSession);
+  const logout = useLogout();
 
   const signatureGradient = "linear-gradient(135deg, #ff9300 0%, #ffb857 100%)";
   const materialIconFill = { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" };
@@ -143,8 +143,7 @@ export const ProfilePage = () => {
         <div className="pt-0">
           <button
             onClick={() => {
-              clearSession();
-              navigate('/login');
+              logout("/login");
             }}
             className="w-full py-5 rounded-[2rem] bg-rose-50 text-rose-600 font-black text-xs uppercase tracking-widest border border-rose-100 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >

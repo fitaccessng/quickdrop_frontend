@@ -2,9 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchProducts } from '../api/products';
+import { fetchServiceCategories } from '../api/system';
 import { fetchVendors } from '../api/vendors';
 import { useCartStore } from '../store/cartStore';
 import { QuickDropLogo } from '../components/branding/QuickDropLogo';
+
+const CATEGORY_THEMES = [
+  { matcher: ["food", "restaurant", "beverage"], icon: "restaurant", color: "text-rose-500", bg: "bg-rose-50", tag: "Cravings" },
+  { matcher: ["pharmacy", "health", "medical"], icon: "medical_services", color: "text-emerald-500", bg: "bg-emerald-50", tag: "Health" },
+  { matcher: ["grocery", "grocer", "market"], icon: "shopping_basket", color: "text-amber-500", bg: "bg-amber-50", tag: "Fresh" },
+  { matcher: ["fashion", "apparel", "clothing", "beauty"], icon: "apparel", color: "text-indigo-500", bg: "bg-indigo-50", tag: "Trends" },
+  { matcher: ["electronics", "tech", "device"], icon: "devices", color: "text-blue-500", bg: "bg-blue-50", tag: "Tech" },
+  { matcher: ["courier", "delivery", "logistics"], icon: "local_shipping", color: "text-cyan-500", bg: "bg-cyan-50", tag: "Dispatch" },
+];
+
+const getCategoryTheme = (name = "") => {
+  const normalized = String(name).toLowerCase();
+  return CATEGORY_THEMES.find((item) => item.matcher.some((keyword) => normalized.includes(keyword))) || {
+    icon: "category",
+    color: "text-slate-500",
+    bg: "bg-slate-100",
+    tag: "Browse",
+  };
+};
 
 export const DashboardPage = () => {
   const navigate = useNavigate();
@@ -54,9 +74,15 @@ export const DashboardPage = () => {
     queryKey: ['vendors'],
     queryFn: () => fetchVendors({ limit: 2 }),
   });
+  const categoriesQuery = useQuery({
+    queryKey: ["service-categories"],
+    queryFn: fetchServiceCategories,
+  });
 
   const products = productsQuery.data || [];
   const vendors = vendorsQuery.data || [];
+  const categories = categoriesQuery.data || [];
+  const vendorMap = new Map(vendors.map((vendor) => [vendor.id, vendor]));
 
   const filteredProducts = products.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -73,9 +99,14 @@ export const DashboardPage = () => {
 
   const addToCart = (e, product) => {
     e.stopPropagation();
-    // Get first vendor as default, ideally this should come from product data
-    const defaultVendor = { id: product.vendor_id || 1, name: 'Vendor', logo_url: '' };
-    addToCartStore(product, defaultVendor);
+    const vendor = vendorMap.get(product.vendor_id) || {
+      id: product.vendor_id,
+      name: `Vendor #${product.vendor_id}`,
+      logo_url: '',
+      city: '',
+      category: product.category,
+    };
+    addToCartStore(product, vendor);
   };
 
   const shareProduct = (e, product) => {
@@ -93,13 +124,17 @@ export const DashboardPage = () => {
     }
   };
 
-  const services = [
-    { name: 'Food', icon: 'restaurant', color: 'text-rose-500', bg: 'bg-rose-50', link: '/category/food', tag: 'Cravings' },
-    { name: 'Pharmacy', icon: 'medical_services', color: 'text-emerald-500', bg: 'bg-emerald-50', link: '/category/pharmacy', tag: 'Health' },
-    { name: 'Grocery', icon: 'shopping_basket', color: 'text-amber-500', bg: 'bg-amber-50', link: '/category/grocery', tag: 'Fresh' },
-    { name: 'Fashion', icon: 'apparel', color: 'text-indigo-500', bg: 'bg-indigo-50', link: '/category/fashion', tag: 'Trends' },
-    { name: 'Electronics', icon: 'devices', color: 'text-blue-500', bg: 'bg-blue-50', link: '/category/electronics', tag: 'Tech' },
-  ];
+  const services = categories.map((category) => {
+    const theme = getCategoryTheme(category.name);
+    return {
+      name: category.name,
+      icon: theme.icon,
+      color: theme.color,
+      bg: theme.bg,
+      link: `/category/${category.slug}`,
+      tag: theme.tag,
+    };
+  });
 
   return (
     <div className="bg-slate-50 font-body text-on-surface antialiased min-h-screen pb-32">
@@ -109,7 +144,11 @@ export const DashboardPage = () => {
           <div className="flex items-center gap-2">
             <QuickDropLogo size={40} showWordmark labelClassName="font-headline text-2xl font-bold text-slate-900" />
           </div>
-          <button className="relative w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 active:scale-90 transition-transform">
+          <button
+            type="button"
+            onClick={() => navigate("/profile/notifications")}
+            className="relative w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 active:scale-90 transition-transform"
+          >
             <span className="material-symbols-outlined">notifications</span>
             <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
           </button>
@@ -180,6 +219,11 @@ export const DashboardPage = () => {
                 <span className="text-[10px] text-slate-400 font-semibold">{service.tag}</span>
               </Link>
             ))}
+            {!categoriesQuery.isLoading && services.length === 0 ? (
+              <div className="flex min-w-[220px] items-center rounded-[2rem] bg-white px-5 py-4 text-sm font-bold text-slate-500 shadow-sm">
+                No admin categories are active yet.
+              </div>
+            ) : null}
           </div>
         </section>
 
@@ -211,7 +255,7 @@ export const DashboardPage = () => {
                   {/* Visual Area */}
                   <div className="relative h-44 w-full mb-4 overflow-hidden rounded-[2rem]">
                     <img 
-                      src={product.image} 
+                      src={product.image_url || product.image_urls?.[0] || "/favicon.svg"} 
                       alt={product.name} 
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />

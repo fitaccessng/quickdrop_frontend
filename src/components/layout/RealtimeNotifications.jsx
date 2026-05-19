@@ -1,20 +1,9 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 
-import {
-  fetchAdminNotifications,
-  fetchCustomerNotifications,
-  fetchRiderNotifications,
-  fetchVendorNotifications,
-} from "../../api/notifications";
+import { fetchNotificationFeed } from "../../api/notifications";
 import { useAuthStore } from "../../store/authStore";
-
-const roleQueryMap = {
-  admin: fetchAdminNotifications,
-  rider: fetchRiderNotifications,
-  vendor: fetchVendorNotifications,
-  user: fetchCustomerNotifications,
-};
 
 const playAlertTone = () => {
   const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -34,15 +23,35 @@ const playAlertTone = () => {
 };
 
 export const RealtimeNotifications = () => {
-  const { token, accountType } = useAuthStore();
+  const location = useLocation();
+  const { token, accountType, user } = useAuthStore();
   const previousTopId = useRef(null);
-  const queryFn = roleQueryMap[accountType];
+  const exactPublicPaths = ["/", "/about"];
+  const authPathPrefixes = [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
+    "/vendor/login",
+    "/vendor/signup",
+    "/vendor/forgot-password",
+    "/vendor/reset-password",
+    "/rider/login",
+    "/rider/signup",
+    "/rider/forgot-password",
+    "/admin/login",
+    "/admin/signup",
+  ];
+  const shouldPausePolling =
+    exactPublicPaths.includes(location.pathname) ||
+    authPathPrefixes.some((path) => location.pathname.startsWith(path));
 
   const notificationsQuery = useQuery({
-    queryKey: ["notifications", accountType],
-    queryFn,
-    enabled: Boolean(token && queryFn),
-    refetchInterval: 5000,
+    queryKey: ["notifications-feed", accountType, user?.id, "overlay"],
+    queryFn: () => fetchNotificationFeed({ limit: 10, unread_only: true }),
+    enabled: Boolean(token && accountType && !shouldPausePolling),
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
   });
 
   const notifications = notificationsQuery.data ?? [];

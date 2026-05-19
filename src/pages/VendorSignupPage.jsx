@@ -3,7 +3,6 @@ import { useState, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthLayout } from "../components/auth/AuthLayout";
 import { registerVendor } from "../api/auth";
-import { useAuthStore } from "../store/authStore";
 import { FaApple } from "react-icons/fa";
 
 const initialState = {
@@ -14,7 +13,17 @@ const initialState = {
   confirm_password: "",
   category: "",
   city: "",
+  logo_url: "",
+  cover_image_url: "",
 };
+
+const fileToDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 // --- Move FormInput OUTSIDE the main component to prevent focus loss ---
 const FormInput = ({ label, icon, ...props }) => (
@@ -69,10 +78,11 @@ const BottomModal = ({ isOpen, onClose, title, options, onSelect, selectedValue 
 
 export const VendorSignupPage = () => {
   const navigate = useNavigate();
-  const setSession = useAuthStore((state) => state.setSession);
   const [form, setForm] = useState(initialState);
   const [activeModal, setActiveModal] = useState(null);
   const [formError, setFormError] = useState("");
+  const [logoPreview, setLogoPreview] = useState("");
+  const [coverPreview, setCoverPreview] = useState("");
 
   const categories = ["Food & Beverages", "Retail", "Electronics", "Fashion", "Pharmacy", "Others"];
   const cities = ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika"];
@@ -94,7 +104,21 @@ export const VendorSignupPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (form.password !== form.confirm_password) return setFormError("Passwords do not match");
+    if (!form.logo_url || !form.cover_image_url) return setFormError("Upload both company logo and company profile image");
     mutation.mutate(form);
+  };
+
+  const handleImageSelect = async (event, field) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      setForm((prev) => ({ ...prev, [field]: dataUrl }));
+      if (field === "logo_url") setLogoPreview(dataUrl);
+      if (field === "cover_image_url") setCoverPreview(dataUrl);
+    } catch {
+      setFormError("Unable to read the selected image");
+    }
   };
 
   return (
@@ -163,6 +187,19 @@ export const VendorSignupPage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ImagePicker
+              label="Company Logo"
+              preview={logoPreview}
+              onChange={(event) => handleImageSelect(event, "logo_url")}
+            />
+            <ImagePicker
+              label="Company Profile Image"
+              preview={coverPreview}
+              onChange={(event) => handleImageSelect(event, "cover_image_url")}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormInput 
               label="Password" icon="lock" name="password" type="password" placeholder="••••••••"
               value={form.password} onChange={handleChange} required
@@ -208,3 +245,22 @@ export const VendorSignupPage = () => {
     </AuthLayout>
   );
 };
+
+const ImagePicker = ({ label, preview, onChange }) => (
+  <div className="space-y-2">
+    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{label}</label>
+    <label className="block cursor-pointer overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white">
+      <div className="flex h-40 items-center justify-center bg-slate-50">
+        {preview ? (
+          <img src={preview} alt={label} className="h-full w-full object-cover" />
+        ) : (
+          <div className="text-center text-slate-400">
+            <span className="material-symbols-outlined text-3xl">add_photo_alternate</span>
+            <p className="mt-2 text-xs font-bold uppercase">Upload image</p>
+          </div>
+        )}
+      </div>
+      <input type="file" accept="image/*" className="hidden" onChange={onChange} />
+    </label>
+  </div>
+);

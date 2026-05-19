@@ -60,7 +60,7 @@ export const RiderAnalyticsPage = () => {
             </div>
             <div className="relative z-10 flex gap-3">
                <span className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                 Top 1% Rider Status
+                 {analytics?.active_deliveries ?? 0} Active Deliveries
                </span>
             </div>
             <span className="material-symbols-outlined absolute -right-8 -bottom-8 text-[160px] opacity-10 rotate-12" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -80,16 +80,16 @@ export const RiderAnalyticsPage = () => {
                 style={{ width: `${analytics?.delivery_completion_rate ?? 0}%` }}
               ></div>
             </div>
-            <p className="text-[10px] mt-4 font-bold text-white/40 uppercase tracking-widest">Excellent Performance</p>
+            <p className="text-[10px] mt-4 font-bold text-white/40 uppercase tracking-widest">Live completion metric</p>
           </div>
         </div>
 
         {/* Small Metrics Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <MetricSmall icon="local_shipping" label="Total Drops" value={analytics?.total_deliveries ?? 0} />
-          <MetricSmall icon="star" label="Avg Rating" value="4.9" />
+          <MetricSmall icon="notifications_active" label="Pending Requests" value={analytics?.pending_requests ?? 0} />
           <MetricSmall icon="schedule" label="Today" value={formatMoney(analytics?.today_earnings ?? 0)} />
-          <MetricSmall icon="distance" label="KM Covered" value="1,240" />
+          <MetricSmall icon="account_balance_wallet" label="Wallet" value={formatMoney(analytics?.wallet_balance ?? 0)} />
         </div>
 
         {/* Earnings Chart Section */}
@@ -99,9 +99,9 @@ export const RiderAnalyticsPage = () => {
               <h3 className="text-2xl font-black tracking-tight text-[#0A192F]">Weekly Trend</h3>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Delivery Volume (Last 7 Days)</p>
             </div>
-            <button className="bg-slate-50 px-4 py-2 rounded-full text-[10px] font-black text-[#3a5f94] flex items-center gap-2 uppercase tracking-widest border border-slate-100 hover:bg-slate-100 transition-all">
-              Filter <span className="material-symbols-outlined text-sm">expand_more</span>
-            </button>
+            <div className="bg-slate-50 px-4 py-2 rounded-full text-[10px] font-black text-[#3a5f94] uppercase tracking-widest border border-slate-100">
+              Live data
+            </div>
           </div>
 
           {/* Bar Chart Container */}

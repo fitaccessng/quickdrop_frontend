@@ -29,6 +29,7 @@ export const useCartStore = create(
                 productId: product.id,
                 vendorId: vendor.id,
                 productName: product.name,
+                productImage: product.image_urls?.[0] || product.image_url || "",
                 vendorName: vendor.name,
                 vendorLogo: vendor.logo_url,
                 quantity: 1,

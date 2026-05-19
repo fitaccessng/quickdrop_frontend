@@ -30,6 +30,21 @@ export const fetchAdminVendorAnalytics = async (vendorId) => {
   return data;
 };
 
+export const fetchAdminPromotions = async () => {
+  const { data } = await http.get("/admin/promotions");
+  return data;
+};
+
+export const updateAdminPromotionStatus = async ({ promotionId, ...payload }) => {
+  const { data } = await http.patch(`/admin/promotions/${promotionId}`, payload);
+  return data;
+};
+
+export const updateAdminProductReview = async ({ reviewId, ...payload }) => {
+  const { data } = await http.patch(`/admin/product-reviews/${reviewId}`, payload);
+  return data;
+};
+
 export const fetchAdminOrders = async (params) => {
   const { data } = await http.get("/admin/orders", { params });
   return data;
@@ -72,6 +87,11 @@ export const updateAdminProfile = async (payload) => {
 
 export const fetchAdminPayoutRequests = async () => {
   const { data } = await http.get("/admin/payout-requests");
+  return data;
+};
+
+export const updateAdminPayoutRequest = async ({ requestId, status }) => {
+  const { data } = await http.patch(`/admin/payout-requests/${requestId}`, { status });
   return data;
 };
 

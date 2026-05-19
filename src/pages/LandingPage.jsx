@@ -83,7 +83,7 @@ export const LandingPage = () => {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [selectedCity, setSelectedCity] = useState("Johannesburg");
+  const [selectedCity, setSelectedCity] = useState(() => localStorage.getItem("quickdrop-selected-city") || "Johannesburg");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchFeedback, setSearchFeedback] = useState("");
 
@@ -156,6 +156,27 @@ export const LandingPage = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem("quickdrop-selected-city", selectedCity);
+  }, [selectedCity]);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        localStorage.setItem(
+          "quickdrop-customer-location",
+          JSON.stringify({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          }),
+        );
+      },
+      () => {},
+      { enableHighAccuracy: true, maximumAge: 300000, timeout: 10000 },
+    );
+  }, []);
+
   return (
     <div className="bg-white font-body overflow-x-hidden">
       {/* --- Updated Navbar --- */}
@@ -184,7 +205,7 @@ export const LandingPage = () => {
             <div className="flex items-center gap-6">
               <Link to="/" className={`font-bold hover:text-[#ff9300] transition-colors ${isScrolled ? "text-slate-700" : "text-white"}`}>Home</Link>
               <Link to="/about" className={`font-bold hover:text-[#ff9300] transition-colors ${isScrolled ? "text-slate-700" : "text-white"}`}>About</Link>
-              <Link to="/vendor/signup" className={`font-bold hover:text-[#ff9300] transition-colors ${isScrolled ? "text-slate-700" : "text-white"}`}>Become a Partner</Link>
+              <Link to="/signup" className={`font-bold hover:text-[#ff9300] transition-colors ${isScrolled ? "text-slate-700" : "text-white"}`}>Become a Partner</Link>
             </div>
             
             <div className="h-6 w-px bg-slate-300/30 mx-2"></div>
@@ -221,7 +242,7 @@ export const LandingPage = () => {
           <div className="absolute top-full left-0 right-0 bg-white border-t border-slate-100 p-6 flex flex-col gap-4 md:hidden shadow-2xl animate-in slide-in-from-top duration-300">
             <Link to="/" className="text-slate-800 font-bold text-lg py-2" onClick={() => setIsMobileMenuOpen(false)}>Home</Link>
             <Link to="/about" className="text-slate-800 font-bold text-lg py-2" onClick={() => setIsMobileMenuOpen(false)}>About</Link>
-            <Link to="/vendor/signup" className="text-slate-800 font-bold text-lg py-2" onClick={() => setIsMobileMenuOpen(false)}>Become a Partner</Link>
+            <Link to="/signup" className="text-slate-800 font-bold text-lg py-2" onClick={() => setIsMobileMenuOpen(false)}>Become a Partner</Link>
             <hr className="border-slate-100" />
             <Link to="/login" className="text-slate-800 font-bold text-lg py-2" onClick={() => setIsMobileMenuOpen(false)}>Sign In</Link>
             <Link to="/signup" style={{ backgroundColor: "#ff9300" }} className="text-white text-center py-4 rounded-2xl font-bold shadow-lg" onClick={() => setIsMobileMenuOpen(false)}>
@@ -418,7 +439,7 @@ export const LandingPage = () => {
                   className={`group cursor-pointer rounded-[2rem] md:rounded-[3rem] overflow-hidden bg-white shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 ${idx === 0 ? 'md:col-span-2' : ''} flex flex-col`}
                 >
                   <div className={idx === 0 ? "relative h-[250px] md:h-[400px]" : "relative h-[200px] md:h-[250px]"}>
-                    <img className="w-full h-full object-cover" src={vendor.image_url || "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80"} alt={vendor.name} />
+                    <img className="w-full h-full object-cover" src={vendor.cover_image_url || vendor.logo_url || "/favicon.svg"} alt={vendor.name} />
                     <div className="absolute top-4 left-4 md:top-8 md:left-8 bg-white/90 backdrop-blur-md px-3 py-1 md:px-4 md:py-2 rounded-xl md:rounded-2xl flex items-center gap-2">
                       <span className="material-symbols-outlined text-amber-500 text-sm md:text-base" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                       <span className="font-bold text-black text-sm md:text-base">{vendor.rating ?? '4.9'}</span>
@@ -430,7 +451,7 @@ export const LandingPage = () => {
                       <h3 className={`font-headline ${idx === 0 ? "text-2xl md:text-3xl" : "text-xl md:text-2xl"} font-extrabold mb-1 text-black`}>{vendor.name}</h3>
                     </div>
                     <div className={idx === 0 ? "mt-4 md:mt-0 text-left md:text-right" : "flex justify-between items-end mt-4"}>
-                      <span className="text-black font-semibold text-sm md:text-xl">{vendor.delivery_time ?? '25-35 min'}</span>
+                      <span className="text-black font-semibold text-sm md:text-xl">{vendor.prep_time_minutes ? `${vendor.prep_time_minutes} min` : "Live"}</span>
                     </div>
                   </div>
                 </div>

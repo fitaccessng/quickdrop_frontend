@@ -58,6 +58,8 @@ import { AdminUserDetailPage } from "../pages/AdminUserDetailPage";
 import { AdminRidersPage } from "../pages/AdminRidersPage";
 import { AdminProfilePage } from "../pages/AdminProfilePage";
 import { AdminTrackRiderPage } from "../pages/AdminTrackRiderPage";
+import { AdminRideOperationsPage } from "../pages/AdminRideOperationsPage";
+import { AdminPayoutRequestsPage } from "../pages/AdminPayoutRequestsPage";
 import { ProfilePage } from "../pages/ProfilePage";
 import { PersonalInformationPage } from "../pages/PersonalInformationPage";
 import { PaymentMethodsPage } from "../pages/PaymentMethodsPage";
@@ -236,6 +238,22 @@ export const router = createHashRouter([
         ),
       },
       {
+        path: "admin/rides",
+        element: (
+          <AdminProtectedRoute>
+            <AdminRideOperationsPage />
+          </AdminProtectedRoute>
+        ),
+      },
+      {
+        path: "admin/payout-requests",
+        element: (
+          <AdminProtectedRoute>
+            <AdminPayoutRequestsPage />
+          </AdminProtectedRoute>
+        ),
+      },
+      {
         path: "admin/profile",
         element: (
           <AdminProtectedRoute>
@@ -276,6 +294,14 @@ export const router = createHashRouter([
         ),
       },
       {
+        path: "rider/navigate",
+        element: (
+          <RiderProtectedRoute>
+            <RiderNavigatePage />
+          </RiderProtectedRoute>
+        ),
+      },
+      {
         path: "rider/navigate/:orderId",
         element: (
           <RiderProtectedRoute>
@@ -300,8 +326,22 @@ export const router = createHashRouter([
         ),
       },
       { path: "orders", element: <OrdersPage /> },
-      { path: "ride", element: <RidePage /> },
-      { path: "request-rider", element: <RequestRiderPage /> },
+      {
+        path: "ride",
+        element: (
+          <ProtectedRoute>
+            <RidePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "request-rider",
+        element: (
+          <ProtectedRoute>
+            <RequestRiderPage />
+          </ProtectedRoute>
+        ),
+      },
       { path: "profile", element: <ProfilePage /> },
       { path: "profile/personal", element: <PersonalInformationPage /> },
       { path: "profile/payments", element: <PaymentMethodsPage /> },

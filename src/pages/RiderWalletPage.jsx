@@ -15,6 +15,8 @@ export const RiderWalletPage = () => {
   const { data: wallet, isLoading } = useQuery({
     queryKey: ["rider-wallet"],
     queryFn: fetchRiderWallet,
+    refetchInterval: 3000,
+    refetchOnWindowFocus: true,
   });
 
   const payoutMutation = useMutation({
@@ -30,14 +32,12 @@ export const RiderWalletPage = () => {
     },
   });
 
-  const dailyGoal = 200;
   const todayEarnings = useMemo(() => {
     const today = new Date().toDateString();
     return (wallet?.recent_deliveries ?? [])
       .filter((order) => new Date(order.updated_at).toDateString() === today)
       .reduce((sum, order) => sum + (order.delivery_fee || 0), 0);
   }, [wallet?.recent_deliveries]);
-  const progressPercent = Math.min((todayEarnings / dailyGoal) * 100, 100);
 
   if (isLoading) {
     return <div className="p-10 text-center font-black uppercase tracking-widest text-slate-400">Loading Wallet...</div>;
@@ -56,12 +56,16 @@ export const RiderWalletPage = () => {
 
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[#4e6300] hidden sm:block">payments</span>
-            <h1 className="text-lg font-black text-[#4e6300] tracking-tight uppercase">Rider Wallet</h1>
+            <h4 className="text-sm font-black text-[#4e6300] tracking-tight uppercase">Rider Wallet</h4>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="relative flex items-center justify-center w-10 h-10 rounded-full bg-white border border-slate-200 text-[#5a5c58] hover:text-[#ff8c00] transition-all active:scale-95 shadow-sm">
+          <button
+            type="button"
+            onClick={() => navigate("/profile/notifications")}
+            className="relative flex items-center justify-center w-10 h-10 rounded-full bg-white border border-slate-200 text-[#5a5c58] hover:text-[#ff8c00] transition-all active:scale-95 shadow-sm"
+          >
             <span className="material-symbols-outlined">notifications</span>
             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
           </button>
@@ -117,18 +121,15 @@ export const RiderWalletPage = () => {
 
           <div className="bg-[#d5e3ff] p-8 rounded-[2.5rem] text-[#001b3c] flex flex-col justify-center shadow-sm">
             <div className="mb-6">
-              <span className="text-[10px] font-black uppercase tracking-widest opacity-60 block mb-2">Today's Progress</span>
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-60 block mb-2">Today's Earnings</span>
               <p className="text-3xl font-black">{formatMoney(todayEarnings)}</p>
               <p className="text-xs font-bold text-[#3a5f94] mt-2 flex items-center gap-1 uppercase tracking-tighter">
                 <span className="material-symbols-outlined text-sm">trending_up</span>
                 Live Activity
               </p>
             </div>
-            <div className="h-2 w-full bg-[#001b3c]/10 rounded-full overflow-hidden">
-              <div className="h-full bg-[#ff8c00] transition-all duration-1000" style={{ width: `${progressPercent}%` }}></div>
-            </div>
             <p className="text-[10px] mt-4 font-black opacity-40 uppercase tracking-widest">
-              DAILY GOAL: {formatMoney(dailyGoal)}
+              Based on completed deliveries updated today
             </p>
           </div>
         </div>

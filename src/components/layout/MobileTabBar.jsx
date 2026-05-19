@@ -1,6 +1,8 @@
 import { Home, MapPinned, ShoppingCart, UserRound } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { NavLink } from "react-router-dom";
 
+import { fetchNotificationUnreadCount } from "../../api/notifications";
 import { useAuthStore } from "../../store/authStore";
 
 const tabs = [
@@ -13,6 +15,15 @@ const tabs = [
 export const MobileTabBar = () => {
   const token = useAuthStore((state) => state.token);
   const accountType = useAuthStore((state) => state.accountType);
+  const userId = useAuthStore((state) => state.user?.id);
+  const unreadCountQuery = useQuery({
+    queryKey: ["notifications-unread-count", accountType, userId],
+    queryFn: fetchNotificationUnreadCount,
+    enabled: Boolean(token && accountType),
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
+  });
+  const unreadCount = unreadCountQuery.data?.unread_count ?? 0;
 
   const resolvedTabs = tabs.map((tab) =>
     tab.label === "Account"
@@ -36,7 +47,14 @@ export const MobileTabBar = () => {
                 }`
               }
             >
-              <Icon size={18} />
+              <div className="relative">
+                <Icon size={18} />
+                {tab.label === "Account" && unreadCount > 0 ? (
+                  <span className="absolute -right-2 -top-2 min-w-[1rem] rounded-full bg-[#ff9300] px-1 py-[1px] text-[8px] font-black text-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                ) : null}
+              </div>
               <span>{tab.label}</span>
             </NavLink>
           );

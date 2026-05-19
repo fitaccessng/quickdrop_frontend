@@ -1,12 +1,19 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from "@tanstack/react-query";
+import { fetchProducts } from "../api/products";
 import { useCartStore } from '../store/cartStore';
+import { formatMoney } from '../lib/utils';
 
 export const CartPage = () => {
   const navigate = useNavigate();
   const cartItems = useCartStore((state) => state.items);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const clearCart = useCartStore((state) => state.clearCart);
+  const productsQuery = useQuery({
+    queryKey: ["cart-products"],
+    queryFn: () => fetchProducts({ include_unavailable: true }),
+  });
   
   // Design constants
   const signatureGradient = {
@@ -66,9 +73,13 @@ export const CartPage = () => {
             <div key={item.lineKey} className="bg-white rounded-[2rem] p-4 flex gap-4 shadow-sm border border-slate-100 relative group overflow-hidden">
               {/* Product Thumbnail */}
               <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-slate-100">
-                {item.vendorLogo && (
-                  <img src={item.vendorLogo} alt={item.productName} className="w-full h-full object-cover" />
-                )}
+                {(() => {
+                  const product = productsQuery.data?.find((productItem) => productItem.id === item.productId);
+                  const imageSrc = item.productImage || product?.image_urls?.[0] || product?.image_url || item.vendorLogo;
+                  return imageSrc ? (
+                    <img src={imageSrc} alt={item.productName} className="w-full h-full object-cover" />
+                  ) : null;
+                })()}
               </div>
 
               {/* Product Info */}
@@ -87,7 +98,7 @@ export const CartPage = () => {
                 </div>
 
                 <div className="flex justify-between items-center mt-2">
-                  <span className="font-black text-lg">${(item.unitPrice * item.quantity).toFixed(2)}</span>
+                  <span className="font-black text-lg">{formatMoney(item.unitPrice * item.quantity)}</span>
                   
                   {/* Quantity Selector */}
                   <div className="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-100">
@@ -117,7 +128,7 @@ export const CartPage = () => {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-slate-500">Subtotal</span>
-              <span className="font-bold text-slate-900">${subtotal.toFixed(2)}</span>
+              <span className="font-bold text-slate-900">{formatMoney(subtotal)}</span>
             </div>
             <p className="text-[11px] text-slate-400 font-medium">Fees and taxes calculated at checkout</p>
           </div>
@@ -132,7 +143,7 @@ export const CartPage = () => {
         <div className="flex items-center justify-between mb-4 px-2">
           <div>
             <span className="text-slate-400 text-[10px] font-black uppercase tracking-tighter block">Subtotal</span>
-            <span className="text-xl font-black text-slate-900">${subtotal.toFixed(2)}</span>
+            <span className="text-xl font-black text-slate-900">{formatMoney(subtotal)}</span>
           </div>
           <div className="text-right flex items-center gap-2">
             <span className="material-symbols-outlined text-emerald-500" style={materialIconFill}>shield</span>

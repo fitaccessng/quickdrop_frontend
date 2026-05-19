@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchUserOrders } from '../api/orders';
+import { formatMoney } from '../lib/utils';
 
 export const OrdersPage = () => {
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ export const OrdersPage = () => {
   const ordersQuery = useQuery({
     queryKey: ['user-orders'],
     queryFn: fetchUserOrders,
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
   });
 
   const orders = ordersQuery.data || [];
@@ -96,7 +99,7 @@ export const OrdersPage = () => {
                       <p className="text-xs font-bold text-slate-600">
                         {order.items?.map(item => item.product_name).join(' • ') || 'Order items'}
                       </p>
-                      <span className="font-black text-slate-900 text-sm">${order.total_amount?.toFixed(2) || 0}</span>
+                      <span className="font-black text-slate-900 text-sm">{formatMoney(order.total_amount || 0)}</span>
                    </div>
                    <p className="text-[10px] text-slate-400 font-medium">Order ID: {order.order_reference}</p>
                 </div>

@@ -1,39 +1,40 @@
-import React from "react";
+import React, { useMemo } from "react";
 
-const buildMapUrl = (latitude, longitude) => {
-  if (latitude == null || longitude == null) {
-    return null;
-  }
-
-  const lat = Number(latitude);
-  const lng = Number(longitude);
-  const delta = 0.01;
-  const bbox = [lng - delta, lat - delta, lng + delta, lat + delta].join("%2C");
-  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
-};
+import { RealtimeRideMap } from "./RealtimeRideMap";
 
 export const LiveRiderMap = ({
   latitude,
   longitude,
+  destinationLatitude,
+  destinationLongitude,
+  routeGeometry,
   title = "Live rider map",
   subtitle = "Tracking the rider in real time",
   riderName,
   status,
   heightClassName = "h-[420px]",
 }) => {
-  const mapUrl = buildMapUrl(latitude, longitude);
+  const ride = useMemo(() => {
+    if (latitude == null || longitude == null) return null;
+    return {
+      pickup: { latitude: Number(latitude), longitude: Number(longitude), address: title },
+      dropoff: {
+        latitude: Number(destinationLatitude ?? latitude),
+        longitude: Number(destinationLongitude ?? longitude),
+        address: title,
+      },
+      rider_location: { latitude: Number(latitude), longitude: Number(longitude) },
+      route_geometry: routeGeometry ?? [],
+      rider: riderName ? { full_name: riderName } : null,
+      status,
+    };
+  }, [destinationLatitude, destinationLongitude, latitude, longitude, riderName, routeGeometry, status, title]);
 
   return (
     <section className={`overflow-hidden rounded-[2rem] bg-slate-900 text-white ${heightClassName}`}>
       <div className="relative h-full">
-        {mapUrl ? (
-          <iframe
-            title={title}
-            src={mapUrl}
-            className="h-full w-full border-0"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-          />
+        {ride ? (
+          <RealtimeRideMap ride={ride} height={420} />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_top_left,_rgba(255,147,0,0.28),_transparent_35%),linear-gradient(135deg,_#121826,_#1f2937)]">
             <div className="text-center">

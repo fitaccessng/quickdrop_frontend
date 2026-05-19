@@ -33,7 +33,7 @@ export const AppShell = () => {
 
   return (
     <div className="min-h-screen text-base-100">
-      <RealtimeNotifications />
+      {/* <RealtimeNotifications /> */}
       <main className="relative pb-28 md:pb-32">
         <AnimatePresence mode="wait">
           <motion.div

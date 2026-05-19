@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { fetchAdminOrderDetail } from "../api/admin";
 import { AdminShell } from "../components/admin/AdminShell";
 import { LiveRiderMap } from "../components/tracking/LiveRiderMap";
+import { useOrderRealtime } from "../hooks/useOrderRealtime";
+import { formatEta, formatMoney } from "../lib/rideMaps";
 
 export const AdminTrackRiderPage = () => {
   const { orderId } = useParams();
@@ -14,13 +16,34 @@ export const AdminTrackRiderPage = () => {
     enabled: Boolean(orderId),
     refetchInterval: 8000,
   });
-  const order = orderQuery.data;
+  const [liveOrder, setLiveOrder] = useState(null);
+
+  useEffect(() => {
+    if (orderQuery.data) {
+      setLiveOrder(orderQuery.data);
+    }
+  }, [orderQuery.data]);
+
+  const order = liveOrder;
+
+  useOrderRealtime({
+    orderId,
+    enabled: Boolean(orderId),
+    onOrderEvent: (payload) => {
+      if (payload.order) {
+        setLiveOrder(payload.order);
+      }
+    },
+  });
 
   return (
     <AdminShell title="Track Rider" subtitle="Live rider assignment and delivery tracking for an order.">
       <LiveRiderMap
         latitude={order?.tracking_latitude}
         longitude={order?.tracking_longitude}
+        destinationLatitude={order?.destination_latitude}
+        destinationLongitude={order?.destination_longitude}
+        routeGeometry={order?.route_geometry}
         riderName={order?.rider?.full_name}
         status={order?.status}
         title={order?.order_reference || "Order"}
@@ -35,14 +58,27 @@ export const AdminTrackRiderPage = () => {
           <p className="mt-4 rounded-[1.5rem] bg-slate-50 px-4 py-4 text-sm text-slate-600">
             {order?.tracking_note || "Waiting for a rider update."}
           </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <MetricCard label="ETA" value={formatEta(order?.estimated_arrival_seconds)} />
+            <MetricCard label="Distance" value={order?.distance_meters_remaining ? `${(order.distance_meters_remaining / 1000).toFixed(1)} km` : "Pending"} />
+            <MetricCard label="Fee" value={formatMoney(order?.delivery_fee ?? 0)} />
+          </div>
         </div>
         <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Rider</p>
           <h3 className="mt-2 text-2xl font-extrabold text-slate-900">{order?.rider?.full_name || "No rider assigned"}</h3>
           <p className="mt-2 text-sm text-slate-500">{order?.rider?.phone || "No contact yet"}</p>
           <p className="mt-4 text-sm text-slate-500">Tracking coordinates: {order?.tracking_latitude ?? "N/A"}, {order?.tracking_longitude ?? "N/A"}</p>
+          <p className="mt-2 text-sm text-slate-500">Live rider coordinates: {order?.rider_current_latitude ?? "N/A"}, {order?.rider_current_longitude ?? "N/A"}</p>
         </div>
       </section>
     </AdminShell>
   );
 };
+
+const MetricCard = ({ label, value }) => (
+  <div className="rounded-[1.25rem] bg-slate-50 px-4 py-4">
+    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{label}</p>
+    <p className="mt-2 text-sm font-extrabold text-slate-900">{value}</p>
+  </div>
+);

@@ -1,6 +1,8 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
+import { fetchNotificationUnreadCount } from "../../api/notifications";
 import { useUiStore } from "../../store/uiStore";
 import { QuickDropLogo } from "../branding/QuickDropLogo";
 
@@ -10,6 +12,8 @@ const items = [
   { to: "/admin/categories", label: "Categories", icon: "category" },
   { to: "/admin/delivery-pricing", label: "Delivery Pricing", icon: "local_shipping" },
   { to: "/admin/orders", label: "Orders", icon: "receipt_long" },
+  { to: "/admin/payout-requests", label: "Withdrawals", icon: "account_balance_wallet" },
+  { to: "/admin/rides", label: "Ride Ops", icon: "map" },
   { to: "/admin/users", label: "Users", icon: "groups" },
   { to: "/admin/riders", label: "Riders", icon: "two_wheeler" },
   { to: "/admin/profile", label: "Settings", icon: "settings" },
@@ -19,6 +23,12 @@ export const AdminShell = ({ title, subtitle, children }) => {
   const location = useLocation();
   const theme = useUiStore((state) => state.theme);
   const toggleTheme = useUiStore((state) => state.toggleTheme);
+  const unreadQuery = useQuery({
+    queryKey: ["notifications-unread-count", "admin-shell"],
+    queryFn: fetchNotificationUnreadCount,
+    refetchInterval: 10000,
+  });
+  const unreadCount = unreadQuery.data?.unread_count ?? 0;
 
   return (
     <div className={`min-h-screen ${theme === "dark" ? "bg-slate-950 text-slate-50" : "bg-[#f4f1ea] text-slate-900"}`}>
@@ -31,6 +41,10 @@ export const AdminShell = ({ title, subtitle, children }) => {
           <button onClick={toggleTheme} className="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-xs font-black uppercase tracking-widest text-white">
             {theme === "dark" ? "Light mode" : "Dark mode"}
           </button>
+          <Link to="/profile/notifications" className="mt-3 flex items-center justify-between rounded-2xl bg-white/10 px-4 py-3 text-xs font-black uppercase tracking-widest text-white">
+            <span>Notifications</span>
+            {unreadCount ? <span className="rounded-full bg-[#ff9300] px-2 py-1 text-[10px]">{unreadCount}</span> : null}
+          </Link>
           <nav className="mt-8 space-y-2">
             {items.map((item) => {
               const active = location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);

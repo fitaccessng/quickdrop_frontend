@@ -26,9 +26,9 @@ export const ProductList = ({ products, vendor, onAddToCart, onProductClick }) =
           }}
         >
           <div className="h-24 w-24 shrink-0 rounded-2xl bg-base-900/80">
-            {product.image_url || product.image ? (
+            {product.image_url || product.image_urls?.[0] || product.image ? (
               <img
-                src={product.image_url || product.image}
+                src={product.image_url || product.image_urls?.[0] || product.image}
                 alt={product.name}
                 className="h-full w-full rounded-2xl object-cover"
               />

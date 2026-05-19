@@ -45,6 +45,11 @@ export const createAddress = async (payload) => {
   return data;
 };
 
+export const updateAddress = async ({ addressId, ...payload }) => {
+  const { data } = await http.patch(`/user/addresses/${addressId}`, payload);
+  return data;
+};
+
 export const registerVendor = async (payload) => {
   const { data } = await http.post("/auth/vendor/register", payload);
   return data;

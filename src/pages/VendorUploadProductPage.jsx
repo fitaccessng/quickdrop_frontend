@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { fetchProducts } from "../api/products";
 import { createVendorProduct, fetchVendorProfile, updateVendorProduct } from "../api/vendorPortal";
 import { formatMoney } from "../lib/utils";
-import { getInventoryStats, isFoodCategory } from "../lib/vendorPortal";
+import { getInventoryStats } from "../lib/vendorPortal";
 
 const initialForm = {
   name: "",
@@ -14,19 +14,61 @@ const initialForm = {
   image_url: "",
   sku: "",
   price: "",
-  category: "",
   prep_time_minutes: 15,
   stock_quantity: 0,
   low_stock_threshold: 5,
   is_available: true,
 };
 
+const fileToDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+const getErrorMessage = (error, fallback) => {
+  const detail = error?.response?.data?.detail;
+
+  if (typeof detail === "string" && detail.trim()) {
+    return detail;
+  }
+
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item.msg === "string") {
+          const field = Array.isArray(item.loc) ? item.loc.at(-1) : null;
+          return field ? `${field}: ${item.msg}` : item.msg;
+        }
+        return null;
+      })
+      .filter(Boolean);
+
+    if (messages.length) {
+      return messages.join(" ");
+    }
+  }
+
+  if (detail && typeof detail === "object" && typeof detail.msg === "string") {
+    return detail.msg;
+  }
+
+  return fallback;
+};
+
+const isLikelyUrl = (value) => typeof value === "string" && /^(https?:)?\/\//.test(value);
+
 export const VendorUploadProductPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProductId, setEditingProductId] = useState(null);
   const [form, setForm] = useState(initialForm);
   const [selectedImages, setSelectedImages] = useState([]); // Array of {file, preview}
+  const [formError, setFormError] = useState("");
 
   const materialIconFill = { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" };
 
@@ -38,22 +80,24 @@ export const VendorUploadProductPage = () => {
   });
 
   const products = productsQuery.data ?? [];
-  const categories = useMemo(() => [...new Set(products.map((p) => p.category).filter(Boolean))], [products]);
   const stats = useMemo(() => getInventoryStats(products), [products]);
+  const vendorCategory = profileQuery.data?.category || "";
+  const formattedPrice = form.price ? formatMoney(Number(form.price) || 0) : formatMoney(0);
 
   const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files ?? []);
     if (selectedImages.length + files.length > 5) {
       alert("You can only upload up to 5 images");
       return;
     }
-
-    const newImages = files.map(file => ({
-      file,
-      preview: URL.createObjectURL(file)
-    }));
-
-    setSelectedImages(prev => [...prev, ...newImages]);
+    Promise.all(
+      files.map(async (file) => ({
+        file,
+        preview: await fileToDataUrl(file),
+      })),
+    )
+      .then((newImages) => setSelectedImages((prev) => [...prev, ...newImages]))
+      .catch(() => setFormError("Unable to process one or more images."));
   };
 
   const removeImage = (index) => {
@@ -63,34 +107,79 @@ export const VendorUploadProductPage = () => {
   const invalidateVendorData = () => {
     queryClient.invalidateQueries({ queryKey: ["vendor-products-upload"] });
     queryClient.invalidateQueries({ queryKey: ["vendor-products-dashboard"] });
+    queryClient.invalidateQueries({ queryKey: ["product-detail-products"] });
   };
-
-  const createMutation = useMutation({
-    mutationFn: createVendorProduct,
-    onSuccess: () => {
-      setForm(initialForm);
-      setSelectedImages([]);
-      setIsModalOpen(false);
-      invalidateVendorData();
-    },
-  });
 
   const inventoryMutation = useMutation({
     mutationFn: updateVendorProduct,
     onSuccess: invalidateVendorData,
   });
 
+  const saveMutation = useMutation({
+    mutationFn: ({ productId, ...payload }) =>
+      productId ? updateVendorProduct({ productId, ...payload }) : createVendorProduct(payload),
+    onSuccess: () => {
+      setForm(initialForm);
+      setSelectedImages([]);
+      setFormError("");
+      setEditingProductId(null);
+      setIsModalOpen(false);
+      invalidateVendorData();
+    },
+    onError: (error) => {
+      setFormError(getErrorMessage(error, "Unable to save product right now."));
+    },
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    setFormError("");
+    const imagePreviews = selectedImages.map((image) => image.preview);
+    const primaryImageUrl = isLikelyUrl(imagePreviews[0]) ? imagePreviews[0] : isLikelyUrl(form.image_url) ? form.image_url : null;
+
     const payload = {
       ...form,
       price: Number(form.price),
+      category: vendorCategory,
       stock_quantity: Number(form.stock_quantity),
       low_stock_threshold: Number(form.low_stock_threshold),
       is_available: form.is_available && Number(form.stock_quantity) > 0,
+      image_url: primaryImageUrl,
+      image_urls: imagePreviews,
     };
-    // Note: In a real app, you'd upload selectedImages to S3/Cloudinary here first
-    createMutation.mutate(payload);
+    saveMutation.mutate(editingProductId ? { productId: editingProductId, ...payload } : payload);
+  };
+
+  const openCreateModal = () => {
+    setEditingProductId(null);
+    setForm(initialForm);
+    setSelectedImages([]);
+    setFormError("");
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (product) => {
+    setEditingProductId(product.id);
+    setForm({
+      name: product.name || "",
+      description: product.description || "",
+      image_url: product.image_url || "",
+      sku: product.sku || "",
+      price: String(product.price ?? ""),
+      prep_time_minutes: product.prep_time_minutes ?? 15,
+      stock_quantity: product.stock_quantity ?? 0,
+      low_stock_threshold: product.low_stock_threshold ?? 5,
+      is_available: Boolean(product.is_available),
+    });
+    setSelectedImages(
+      (product.image_urls?.length ? product.image_urls : product.image_url ? [product.image_url] : []).map((preview, index) => ({
+        file: null,
+        preview,
+        index,
+      })),
+    );
+    setFormError("");
+    setIsModalOpen(true);
   };
 
   return (
@@ -104,7 +193,7 @@ export const VendorUploadProductPage = () => {
           <span className="material-symbols-outlined text-xl">arrow_back_ios_new</span>
         </button>
         <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-sm">
-          <img alt="Profile" src={profileQuery.data?.logo_url || "https://via.placeholder.com/150"} className="w-full h-full object-cover" />
+          <img alt="Profile" src={profileQuery.data?.logo_url || "/favicon.svg"} className="w-full h-full object-cover" />
         </div>
       </header>
 
@@ -127,14 +216,14 @@ export const VendorUploadProductPage = () => {
           <h3 className="px-2 text-lg font-headline font-extrabold text-slate-900">Catalog Management</h3>
           <div className="space-y-3">
             {products.map((product) => (
-              <ProductItem key={product.id} product={product} inventoryMutation={inventoryMutation} />
+              <ProductItem key={product.id} product={product} inventoryMutation={inventoryMutation} onEdit={openEditModal} />
             ))}
           </div>
         </section>
       </main>
 
       <button
-        onClick={() => setIsModalOpen(true)}
+        onClick={openCreateModal}
         className="fixed bottom-10 right-6 z-50 w-16 h-16 bg-[#ff9300] rounded-2xl text-white shadow-xl flex items-center justify-center active:scale-90 transition-transform"
       >
         <span className="material-symbols-outlined text-3xl" style={materialIconFill}>add</span>
@@ -167,8 +256,8 @@ export const VendorUploadProductPage = () => {
         </div>
         
         <div className="mb-8 text-center pt-4">
-          <h2 className="text-2xl font-headline font-extrabold text-slate-900">Add Product</h2>
-          <p className="text-sm text-slate-400 font-medium">Capture details for your new item</p>
+          <h2 className="text-2xl font-headline font-extrabold text-slate-900">{editingProductId ? "Edit Product" : "Add Product"}</h2>
+          <p className="text-sm text-slate-400 font-medium">{editingProductId ? "Update your product details and images" : "Capture details for your new item"}</p>
         </div>
              
 
@@ -223,33 +312,42 @@ export const VendorUploadProductPage = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <Field label="Category">
-                      <div className="relative">
-                        <input list="modal-cats" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} className="modern-input pr-10" placeholder="Fashion" />
-                        <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 text-sm pointer-events-none">expand_more</span>
+                      <div className="modern-input flex items-center justify-between text-slate-900">
+                        <span>{vendorCategory || "Vendor category"}</span>
+                        <span className="rounded-full bg-orange-50 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-[#ff9300]">
+                          Saved
+                        </span>
                       </div>
-                      <datalist id="modal-cats">{categories.map(c => <option key={c} value={c} />)}</datalist>
                     </Field>
                     <Field label="Serial/SKU">
                       <input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} className="modern-input" placeholder="BAG-001" />
                     </Field>
                   </div>
 
-                <Field label="Price">
-  <div className="relative group">
-    {/* South African Rand Symbol Container */}
-    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-[13px] font-black text-slate-500 group-focus-within:bg-[#ff9300]/10 group-focus-within:text-[#ff9300] transition-colors">
-      R
-    </div>
-    <input 
-      required 
-      type="number" 
-      value={form.price} 
-      onChange={(e) => setForm({ ...form, price: e.target.value })} 
-      className="modern-input pl-14" 
-      placeholder="0.00" 
-    />
-  </div>
-</Field>
+                  <Field label="Price">
+                    <div className="space-y-3">
+                      <div className="relative group">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-[13px] font-black text-slate-500 group-focus-within:bg-[#ff9300]/10 group-focus-within:text-[#ff9300] transition-colors">
+                          R
+                        </div>
+                        <input
+                          required
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          inputMode="decimal"
+                          value={form.price}
+                          onChange={(e) => setForm({ ...form, price: e.target.value })}
+                          className="modern-input pl-14"
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ff9300]">Customer sees</p>
+                        <p className="mt-1 text-lg font-black text-slate-900">{formattedPrice}</p>
+                      </div>
+                    </div>
+                  </Field>
 
                   <Field label="Product Bio / Description">
                     <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="modern-input py-4 resize-none leading-relaxed" placeholder="Tell customers what makes this special..." />
@@ -265,15 +363,17 @@ export const VendorUploadProductPage = () => {
                   </div>
                 </div>
 
+                {formError ? <p className="text-sm font-bold text-red-500">{formError}</p> : null}
+
                 <button
                   type="submit"
-                  disabled={createMutation.isPending}
+                  disabled={saveMutation.isPending}
                   className="w-full py-5 bg-slate-950 text-white font-headline font-extrabold text-lg rounded-[2rem] shadow-xl shadow-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
-                  {createMutation.isPending ? (
+                  {saveMutation.isPending ? (
                     <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
-                    <>Publish Product <span className="material-symbols-outlined text-sm">auto_awesome</span></>
+                    <>{editingProductId ? "Save Changes" : "Publish Product"} <span className="material-symbols-outlined text-sm">auto_awesome</span></>
                   )}
                 </button>
               </form>
@@ -323,14 +423,14 @@ const Field = ({ label, children }) => (
   </div>
 );
 
-const ProductItem = ({ product, inventoryMutation }) => {
+const ProductItem = ({ product, inventoryMutation, onEdit }) => {
   const isLow = (product.stock_quantity || 0) <= (product.low_stock_threshold || 5);
   const isOut = (product.stock_quantity || 0) <= 0;
 
   return (
     <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
       <div className="w-16 h-16 rounded-2xl bg-slate-50 overflow-hidden flex-shrink-0">
-        <img src={product.image_url || `https://picsum.photos/seed/${product.id}/200`} className="w-full h-full object-cover" />
+        <img src={product.image_url || product.image_urls?.[0] || "/favicon.svg"} className="w-full h-full object-cover" />
       </div>
       <div className="flex-1 min-w-0 text-left">
         <div className="flex items-center justify-between">
@@ -340,6 +440,9 @@ const ProductItem = ({ product, inventoryMutation }) => {
           </span>
         </div>
         <div className="flex items-center gap-3 mt-3">
+          <button onClick={() => onEdit(product)} className="rounded-lg bg-orange-50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[#ff9300]">
+            Edit
+          </button>
           <button onClick={() => inventoryMutation.mutate({ productId: product.id, stock_quantity: Math.max(0, (product.stock_quantity || 0) - 1) })} className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center font-bold text-slate-400 hover:text-slate-900 transition-colors">-</button>
           <span className="text-sm font-black w-6 text-center">{product.stock_quantity || 0}</span>
           <button onClick={() => inventoryMutation.mutate({ productId: product.id, stock_quantity: (product.stock_quantity || 0) + 1, is_available: true })} className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold">+</button>

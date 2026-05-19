@@ -20,17 +20,12 @@ export const CategoryDetailPage = () => {
     queryKey: ["service-categories"],
     queryFn: fetchServiceCategories,
   });
-  const productsQuery = useQuery({
-    queryKey: ["category-products"],
-    queryFn: () => fetchProducts({}),
-  });
   const vendorsQuery = useQuery({
     queryKey: ["category-vendors"],
     queryFn: () => fetchVendors({}),
   });
 
   const categories = categoriesQuery.data ?? [];
-  const products = productsQuery.data ?? [];
   const vendors = vendorsQuery.data ?? [];
 
   const matchedCategory = useMemo(() => {
@@ -42,19 +37,23 @@ export const CategoryDetailPage = () => {
     });
   }, [categories, categorySlug]);
 
-  const categoryName =
-    matchedCategory?.name ||
-    products.find((item) => slugify(item.category) === categorySlug)?.category ||
-    categorySlug.replace(/-/g, " ");
+  const categoryName = matchedCategory?.name || categorySlug.replace(/-/g, " ");
 
-  const categoryProducts = useMemo(
-    () =>
-      products.filter((item) => {
-        const itemSlug = slugify(item.category);
-        return itemSlug === categorySlug || itemSlug === slugify(categoryName);
-      }),
-    [products, categorySlug, categoryName],
-  );
+  const productsQuery = useQuery({
+    queryKey: ["category-products", categoryName],
+    queryFn: () => fetchProducts({ category: categoryName }),
+    enabled: Boolean(categoryName),
+  });
+
+  const products = productsQuery.data ?? [];
+
+  const categoryProducts = useMemo(() => {
+    const normalizedCategorySlug = slugify(categoryName);
+    return products.filter((item) => {
+      const itemSlug = slugify(item.category);
+      return itemSlug === categorySlug || itemSlug === normalizedCategorySlug;
+    });
+  }, [products, categorySlug, categoryName]);
 
   const vendorMap = useMemo(
     () => Object.fromEntries(vendors.map((vendor) => [vendor.id, vendor])),
@@ -104,7 +103,7 @@ export const CategoryDetailPage = () => {
                 >
                   <div className="h-48 bg-slate-100">
                     <img
-                      src={product.image_url || product.image}
+                      src={product.image_url || product.image_urls?.[0] || product.image || "/favicon.svg"}
                       alt={product.name}
                       className="w-full h-full object-cover"
                     />

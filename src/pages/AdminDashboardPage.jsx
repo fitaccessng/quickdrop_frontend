@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { fetchAdminDashboard } from "../api/admin";
@@ -22,7 +23,12 @@ export const AdminDashboardPage = () => {
       </div>
 
       <section className="mt-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff9300]">Payment Requests</p>
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-[#ff9300]">Payment Requests</p>
+          <Link to="/admin/payout-requests" className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">
+            View all
+          </Link>
+        </div>
         <div className="mt-4 space-y-3">
           {(stats.recent_payout_requests ?? []).map((request) => (
             <div key={request.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] bg-slate-50 px-4 py-4">
