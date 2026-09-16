@@ -1,8 +1,9 @@
 import http from "./http";
+import { asArray } from "../lib/utils";
 
 export const fetchProducts = async (params) => {
   const { data } = await http.get("/products", { params });
-  return Array.isArray(data) ? data : data?.items ?? data?.products ?? [];
+  return asArray(data, "items", "products");
 };
 
 export const fetchProduct = async (productId) => {

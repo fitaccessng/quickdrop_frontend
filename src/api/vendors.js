@@ -1,8 +1,9 @@
 import http from "./http";
+import { asArray } from "../lib/utils";
 
 export const fetchVendors = async (params) => {
   const { data } = await http.get("/vendors", { params });
-  return Array.isArray(data) ? data : data?.items ?? data?.vendors ?? [];
+  return asArray(data, "items", "vendors");
 };
 
 export const fetchVendor = async (id) => {

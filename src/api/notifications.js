@@ -1,8 +1,9 @@
 import http from "./http";
+import { asArray } from "../lib/utils";
 
 export const fetchNotificationFeed = async (params = {}) => {
   const { data } = await http.get("/notifications/feed", { params });
-  return Array.isArray(data) ? data : data?.items ?? data?.notifications ?? [];
+  return asArray(data, "items", "notifications");
 };
 
 export const fetchNotificationUnreadCount = async () => {

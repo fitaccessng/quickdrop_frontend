@@ -1,8 +1,9 @@
 import http from "./http";
+import { asArray } from "../lib/utils";
 
 export const fetchServiceCategories = async () => {
   const { data } = await http.get("/service-categories");
-  return Array.isArray(data) ? data : data?.items ?? data?.categories ?? [];
+  return asArray(data, "items", "categories");
 };
 
 export const fetchServiceCategoryOverview = async () => {
