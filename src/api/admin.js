@@ -85,6 +85,31 @@ export const updateAdminProfile = async (payload) => {
   return data;
 };
 
+export const fetchAdminPayments = async () => {
+  const { data } = await http.get("/admin/payments");
+  return data;
+};
+
+export const fetchAdminRevenue = async () => {
+  const { data } = await http.get("/admin/revenue");
+  return data;
+};
+
+export const updateCustomerStatus = async ({ userId, status }) => {
+  const { data } = await http.patch(`/admin/customers/${userId}/status`, { status });
+  return data;
+};
+
+export const updateVendorStatus = async ({ vendorId, status }) => {
+  const { data } = await http.patch(`/admin/vendors/${vendorId}/status`, { status });
+  return data;
+};
+
+export const updateAdminOrderStatus = async ({ orderId, status }) => {
+  const { data } = await http.patch(`/admin/orders/${orderId}/status`, { status });
+  return data;
+};
+
 export const fetchAdminPayoutRequests = async () => {
   const { data } = await http.get("/admin/payout-requests");
   return data;

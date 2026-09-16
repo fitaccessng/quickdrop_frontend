@@ -67,7 +67,7 @@ export const VendorUploadProductPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState(null);
   const [form, setForm] = useState(initialForm);
-  const [selectedImages, setSelectedImages] = useState([]); // Array of {file, preview}
+  const [selectedImages, setSelectedImages] = useState([]); 
   const [formError, setFormError] = useState("");
 
   const materialIconFill = { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" };
@@ -197,12 +197,13 @@ export const VendorUploadProductPage = () => {
         </div>
       </header>
 
-      <main className="pt-24 px-5 max-w-md mx-auto">
-        <section className="bg-slate-950 rounded-[2.5rem] p-6 text-white shadow-2xl shadow-slate-200 mb-8 relative overflow-hidden">
+      {/* RESPONSIVE MAIN CONTAINER */}
+      <main className="pt-24 px-4 sm:px-6 max-w-5xl mx-auto">
+        <section className="bg-slate-950 rounded-[2.5rem] p-6 sm:p-8 text-white shadow-2xl shadow-slate-200 mb-8 relative overflow-hidden">
           <div className="relative z-10">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ff9300] mb-1">Store Performance</p>
-            <h2 className="text-2xl font-headline font-extrabold mb-6">Inventory Status</h2>
-            <div className="grid grid-cols-2 gap-3">
+            <h2 className="text-2xl sm:text-3xl font-headline font-extrabold mb-6">Inventory Status</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <StatItem label="Total SKUs" value={stats.totalProducts} />
               <StatItem label="Active" value={stats.availableProducts} color="text-emerald-400" />
               <StatItem label="Low Stock" value={stats.lowStockProducts} color="text-amber-400" />
@@ -213,8 +214,12 @@ export const VendorUploadProductPage = () => {
         </section>
 
         <section className="space-y-4">
-          <h3 className="px-2 text-lg font-headline font-extrabold text-slate-900">Catalog Management</h3>
-          <div className="space-y-3">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="text-lg sm:text-xl font-headline font-extrabold text-slate-900">Catalog Management</h3>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{products.length} Items</span>
+          </div>
+          {/* RESPONSIVE CATALOG GRID */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {products.map((product) => (
               <ProductItem key={product.id} product={product} inventoryMutation={inventoryMutation} onEdit={openEditModal} />
             ))}
@@ -224,93 +229,108 @@ export const VendorUploadProductPage = () => {
 
       <button
         onClick={openCreateModal}
-        className="fixed bottom-10 right-6 z-50 w-16 h-16 bg-[#ff9300] rounded-2xl text-white shadow-xl flex items-center justify-center active:scale-90 transition-transform"
+        className="fixed bottom-10 right-6 z-50 w-16 h-16 bg-[#ff9300] rounded-2xl text-white shadow-xl flex items-center justify-center active:scale-95 hover:scale-105 transition-all"
       >
         <span className="material-symbols-outlined text-3xl" style={materialIconFill}>add</span>
       </button>
 
       <AnimatePresence>
-     {isModalOpen && (
-    <>
-      <motion.div 
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        onClick={() => setIsModalOpen(false)}
-        className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-[60]"
-      />
-      <motion.div
-        initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        className="fixed bottom-0 left-0 right-0 z-[70] bg-white rounded-t-[3rem] max-h-[92vh] overflow-y-auto px-7 pt-4 pb-12 shadow-2xl"
-      >
-        {/* Handle Bar */}
-        <div className="w-16 h-1.5 bg-slate-100 rounded-full mx-auto mb-4" />
-        
-        {/* Close Button */}
-        <div className="absolute top-6 right-6">
-          <button 
-            onClick={() => setIsModalOpen(false)}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 border border-slate-100 text-slate-400 active:scale-90 transition-transform"
-          >
-            <span className="material-symbols-outlined text-xl">close</span>
-          </button>
-        </div>
-        
-        <div className="mb-8 text-center pt-4">
-          <h2 className="text-2xl font-headline font-extrabold text-slate-900">{editingProductId ? "Edit Product" : "Add Product"}</h2>
-          <p className="text-sm text-slate-400 font-medium">{editingProductId ? "Update your product details and images" : "Capture details for your new item"}</p>
-        </div>
-             
+        {isModalOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setIsModalOpen(false)}
+              className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-[60]"
+            />
+            {/* RESPONSIVE MODAL PANEL */}
+            <motion.div
+              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 md:inset-y-auto md:top-1/2 md:-translate-y-1/2 md:max-w-xl md:mx-auto z-[70] bg-white rounded-t-[3rem] md:rounded-[2.5rem] max-h-[92vh] md:max-h-[85vh] overflow-y-auto px-7 pt-4 pb-12 shadow-2xl"
+            >
+              {/* Handle Bar (Hidden on Desktop) */}
+              <div className="w-16 h-1.5 bg-slate-100 rounded-full mx-auto mb-4 md:hidden" />
+              
+              {/* Close Button */}
+              <div className="absolute top-6 right-6">
+                <button 
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 border border-slate-100 text-slate-400 active:scale-90 transition-transform"
+                >
+                  <span className="material-symbols-outlined text-xl">close</span>
+                </button>
+              </div>
+              
+              <div className="mb-8 text-center pt-4">
+                <h2 className="text-2xl font-headline font-extrabold text-slate-900">{editingProductId ? "Edit Product" : "Add Product"}</h2>
+                <p className="text-sm text-slate-400 font-medium">{editingProductId ? "Update your product details and images" : "Capture details for your new item"}</p>
+              </div>
 
               <form onSubmit={handleSubmit} className="space-y-8">
-                {/* MULTIPLE IMAGE SELECTION */}
-                <div className="space-y-4">
-                   <div className="flex justify-between items-end px-1">
-                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Product Media ({selectedImages.length}/5)</label>
-                      {selectedImages.length > 0 && (
-                        <button type="button" onClick={() => setSelectedImages([])} className="text-[10px] font-bold text-red-400 uppercase">Clear All</button>
-                      )}
+                {/* PRODUCT MEDIA SECTION */}
+                <div className="space-y-4 bg-orange-50/40 p-5 rounded-[2rem] border border-orange-100/60">
+                   <div className="flex justify-between items-center px-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-lg bg-[#ff9300]/10 text-[#ff9300] flex items-center justify-center material-symbols-outlined text-sm font-bold">photo_camera</span>
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-800">Product Media</label>
+                      </div>
+                      <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-orange-100 text-[#ff9300]">
+                        {selectedImages.length}/5 uploaded
+                      </span>
                    </div>
-                   <div className="grid grid-cols-5 gap-2">
-                      {selectedImages.map((img, index) => (
-                        <div key={index} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 group">
-                          <img src={img.preview} className="w-full h-full object-cover" alt="Preview" />
-                          <button 
-                            type="button" 
-                            onClick={() => removeImage(index)}
-                            className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <span className="material-symbols-outlined text-white text-sm">close</span>
-                          </button>
-                        </div>
-                      ))}
-                      
-                      {selectedImages.length < 5 && (
-                        <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center text-slate-400 cursor-pointer hover:bg-slate-100 hover:border-[#ff9300]/40 transition-all active:scale-95">
-                          <span className="material-symbols-outlined text-xl">add_a_photo</span>
-                          <input 
-                            type="file" 
-                            multiple 
-                            accept="image/*" 
-                            className="hidden" 
-                            onChange={handleImageChange} 
-                          />
-                        </label>
-                      )}
-                      
-                      {/* Empty Placeholder Slots to keep grid consistent */}
-                      {[...Array(Math.max(0, 4 - selectedImages.length))].map((_, i) => (
-                        <div key={i} className="aspect-square rounded-2xl bg-slate-50/50 border border-slate-50" />
-                      ))}
-                   </div>
+
+                   {selectedImages.length < 5 && (
+                     <label className="relative border-2 border-dashed border-[#ff9300]/40 bg-white hover:bg-orange-50/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all shadow-sm group">
+                       <div className="w-12 h-12 rounded-2xl bg-orange-100/70 text-[#ff9300] flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                         <span className="material-symbols-outlined text-2xl">add_a_photo</span>
+                       </div>
+                       <p className="text-sm font-extrabold text-slate-900">Click to upload photos</p>
+                       <p className="text-xs text-slate-400 font-medium mt-0.5">PNG, JPG or WEBP (Max 5 images)</p>
+                       <input 
+                         type="file" 
+                         multiple 
+                         accept="image/*" 
+                         className="hidden" 
+                         onChange={handleImageChange} 
+                       />
+                     </label>
+                   )}
+
+                   {selectedImages.length > 0 && (
+                     <div className="space-y-3">
+                       <div className="flex items-center justify-between px-1">
+                         <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Uploaded previews (First is cover)</p>
+                         <button type="button" onClick={() => setSelectedImages([])} className="text-[10px] font-bold text-red-500 uppercase hover:underline">Clear All</button>
+                       </div>
+                       <div className="grid grid-cols-5 gap-2">
+                          {selectedImages.map((img, index) => (
+                            <div key={index} className={`relative aspect-square rounded-2xl overflow-hidden border-2 ${index === 0 ? "border-[#ff9300] shadow-md" : "border-slate-200"} bg-white group`}>
+                              <img src={img.preview} className="w-full h-full object-cover" alt="Preview" />
+                              {index === 0 && (
+                                <span className="absolute bottom-1 left-1 bg-[#ff9300] text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">Cover</span>
+                              )}
+                              <button 
+                                type="button" 
+                                onClick={() => removeImage(index)}
+                                className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <span className="material-symbols-outlined text-white text-base">close</span>
+                              </button>
+                            </div>
+                          ))}
+                       </div>
+                     </div>
+                   )}
                 </div>
 
-                {/* UPDATED INPUT DESIGN */}
+                {/* FORM INPUTS */}
                 <div className="space-y-5">
                   <Field label="Name of Product">
                     <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="modern-input" placeholder="e.g. Vintage Leather Bag" />
                   </Field>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="Category">
                       <div className="modern-input flex items-center justify-between text-slate-900">
                         <span>{vendorCategory || "Vendor category"}</span>
@@ -324,10 +344,18 @@ export const VendorUploadProductPage = () => {
                     </Field>
                   </div>
 
-                  <Field label="Price">
-                    <div className="space-y-3">
-                      <div className="relative group">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-[13px] font-black text-slate-500 group-focus-within:bg-[#ff9300]/10 group-focus-within:text-[#ff9300] transition-colors">
+                  {/* REDESIGNED PRICE SECTION */}
+                   <div className="flex items-center justify-between px-1 mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center material-symbols-outlined text-sm font-bold">payments</span>
+                        <label className="text-xs font-black uppercase tracking-widest text-slate-800">Price</label>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Required</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                      <div className="sm:col-span-7 relative group">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-xs font-extrabold text-slate-600 shadow-sm group-focus-within:border-[#ff9300] group-focus-within:text-[#ff9300] transition-colors">
                           R
                         </div>
                         <input
@@ -338,16 +366,18 @@ export const VendorUploadProductPage = () => {
                           inputMode="decimal"
                           value={form.price}
                           onChange={(e) => setForm({ ...form, price: e.target.value })}
-                          className="modern-input pl-14"
+                          className="modern-input pl-16 py-3.5 text-lg font-black bg-white"
                           placeholder="0.00"
                         />
                       </div>
-                      <div className="rounded-2xl border border-orange-100 bg-orange-50 px-4 py-3">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ff9300]">Customer sees</p>
-                        <p className="mt-1 text-lg font-black text-slate-900">{formattedPrice}</p>
+                      <div className="sm:col-span-5 rounded-2xl border border-orange-200/60 bg-gradient-to-br from-orange-50 to-amber-50/30 px-4 py-3 flex flex-col justify-center">
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#ff9300]">Customer View</span>
+                        <span className="text-base sm:text-lg font-black text-slate-900 mt-0.5 truncate">{formattedPrice}</span>
                       </div>
                     </div>
-                  </Field>
+                  {/* <div className="space-y-2 bg-slate-50/80 p-5 rounded-[2rem] border border-slate-100">
+                   
+                  </div> */}
 
                   <Field label="Product Bio / Description">
                     <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="modern-input py-4 resize-none leading-relaxed" placeholder="Tell customers what makes this special..." />
@@ -430,7 +460,7 @@ const ProductItem = ({ product, inventoryMutation, onEdit }) => {
   return (
     <div className="bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
       <div className="w-16 h-16 rounded-2xl bg-slate-50 overflow-hidden flex-shrink-0">
-        <img src={product.image_url || product.image_urls?.[0] || "/favicon.svg"} className="w-full h-full object-cover" />
+        <img src={product.image_url || product.image_urls?.[0] || "/favicon.svg"} className="w-full h-full object-cover" alt={product.name} />
       </div>
       <div className="flex-1 min-w-0 text-left">
         <div className="flex items-center justify-between">
@@ -440,12 +470,12 @@ const ProductItem = ({ product, inventoryMutation, onEdit }) => {
           </span>
         </div>
         <div className="flex items-center gap-3 mt-3">
-          <button onClick={() => onEdit(product)} className="rounded-lg bg-orange-50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[#ff9300]">
+          <button type="button" onClick={() => onEdit(product)} className="rounded-lg bg-orange-50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[#ff9300]">
             Edit
           </button>
-          <button onClick={() => inventoryMutation.mutate({ productId: product.id, stock_quantity: Math.max(0, (product.stock_quantity || 0) - 1) })} className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center font-bold text-slate-400 hover:text-slate-900 transition-colors">-</button>
+          <button type="button" onClick={() => inventoryMutation.mutate({ productId: product.id, stock_quantity: Math.max(0, (product.stock_quantity || 0) - 1) })} className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center font-bold text-slate-400 hover:text-slate-900 transition-colors">-</button>
           <span className="text-sm font-black w-6 text-center">{product.stock_quantity || 0}</span>
-          <button onClick={() => inventoryMutation.mutate({ productId: product.id, stock_quantity: (product.stock_quantity || 0) + 1, is_available: true })} className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold">+</button>
+          <button type="button" onClick={() => inventoryMutation.mutate({ productId: product.id, stock_quantity: (product.stock_quantity || 0) + 1, is_available: true })} className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold">+</button>
         </div>
       </div>
     </div>

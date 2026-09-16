@@ -34,7 +34,6 @@ export const DashboardPage = () => {
   const cartItems = useCartStore((state) => state.items);
   const addToCartStore = useCartStore((state) => state.addItem);
 
-  // Design constants
   const signatureGradient = {
     background: 'linear-gradient(135deg, #b61321 0%, #ff7670 100%)',
   };
@@ -43,14 +42,12 @@ export const DashboardPage = () => {
     fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24"
   };
 
-  // Promotional Banners
   const banners = [
-    { id: 1, title: "Summer Cravings", subtitle: "Up to 40% off on cold drinks", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80", color: "from-orange-500/80" },
-    { id: 2, title: "Fresh Groceries", subtitle: "Delivered in 15 minutes", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80", color: "from-green-600/80" },
-    { id: 3, title: "New Fashion Drop", subtitle: "Check out the latest trends", image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80", color: "from-purple-600/80" },
+    { id: 1, title: "Summer Cravings", subtitle: "Up to 40% off on cold drinks", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80", color: "from-orange-500/90" },
+    { id: 2, title: "Fresh Groceries", subtitle: "Delivered in 15 minutes", image: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=800&q=80", color: "from-emerald-600/90" },
+    { id: 3, title: "New Fashion Drop", subtitle: "Check out the latest trends", image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80", color: "from-purple-600/90" },
   ];
 
-  // Auto-slide effect for banner
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentBanner((prev) => (prev + 1) % banners.length);
@@ -58,22 +55,20 @@ export const DashboardPage = () => {
     return () => clearInterval(timer);
   }, [banners.length]);
 
-  // Save favorites to localStorage
   useEffect(() => {
     localStorage.setItem('favorites', JSON.stringify(favorites));
   }, [favorites]);
 
-  // Fetch products from backend
   const productsQuery = useQuery({
     queryKey: ['products'],
-    queryFn: () => fetchProducts({ limit: 6 }),
+    queryFn: () => fetchProducts({ limit: 8 }),
   });
 
-  // Fetch vendors from backend
   const vendorsQuery = useQuery({
     queryKey: ['vendors'],
-    queryFn: () => fetchVendors({ limit: 2 }),
+    queryFn: () => fetchVendors({ limit: 4 }),
   });
+
   const categoriesQuery = useQuery({
     queryKey: ["service-categories"],
     queryFn: fetchServiceCategories,
@@ -109,21 +104,6 @@ export const DashboardPage = () => {
     addToCartStore(product, vendor);
   };
 
-  const shareProduct = (e, product) => {
-    e.stopPropagation();
-    if (navigator.share) {
-      navigator.share({
-        title: product.name,
-        text: `Check out ${product.name}`,
-        url: window.location.href,
-      });
-    } else {
-      const url = `${window.location.origin}/product/${product.id}`;
-      navigator.clipboard.writeText(url);
-      alert('Product link copied to clipboard!');
-    }
-  };
-
   const services = categories.map((category) => {
     const theme = getCategoryTheme(category.name);
     return {
@@ -137,162 +117,162 @@ export const DashboardPage = () => {
   });
 
   return (
-    <div className="bg-slate-50 font-body text-on-surface antialiased min-h-screen pb-32">
+    <div className="bg-slate-50/50 font-body text-slate-900 antialiased min-h-screen pb-32 selection:bg-rose-500 selection:text-white">
       {/* TopAppBar */}
-      <header className="bg-white/80 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-slate-100">
-        <div className="flex justify-between items-center px-6 py-4 w-full">
+      <header className="bg-white/90 backdrop-blur-md fixed top-0 w-full z-50 border-b border-slate-100/80">
+        <div className="max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 py-3.5">
           <div className="flex items-center gap-2">
-            <QuickDropLogo size={40} showWordmark labelClassName="font-headline text-2xl font-bold text-slate-900" />
+            <QuickDropLogo size={36} showWordmark labelClassName="font-headline text-xl font-black tracking-tight text-slate-900" />
           </div>
           <button
             type="button"
             onClick={() => navigate("/profile/notifications")}
-            className="relative w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-600 active:scale-90 transition-transform"
+            className="relative w-10 h-10 flex items-center justify-center rounded-full bg-slate-100/80 text-slate-600 hover:bg-slate-200/60 active:scale-95 transition-all"
           >
-            <span className="material-symbols-outlined">notifications</span>
-            <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+            <span className="material-symbols-outlined text-[20px]">notifications</span>
+            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>
           </button>
         </div>
       </header>
 
-      <main className="pt-20">
+      <main className="pt-20 max-w-7xl mx-auto px-4 sm:px-6">
         {/* Banner Slideshow */}
-        <section className="px-6 mb-8 mt-2">
-          <div className="relative h-48 w-full overflow-hidden rounded-[2rem] shadow-lg">
+        <section className="my-4 sm:my-6">
+          <div className="relative h-44 sm:h-64 w-full overflow-hidden rounded-3xl shadow-sm border border-slate-100">
             {banners.map((banner, index) => (
               <div
                 key={banner.id}
-                className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentBanner ? 'opacity-100' : 'opacity-0'}`}
+                className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${index === currentBanner ? 'opacity-100' : 'opacity-0'}`}
               >
                 <img src={banner.image} alt={banner.title} className="w-full h-full object-cover" />
-                <div className={`absolute inset-0 bg-gradient-to-r ${banner.color} to-transparent flex flex-col justify-center px-8 text-white`}>
-                  <h2 className="text-2xl font-black font-headline mb-1">{banner.title}</h2>
-                  <p className="text-sm font-medium opacity-90">{banner.subtitle}</p>
-                  <button className="mt-4 bg-white text-slate-900 text-xs font-bold px-4 py-2 rounded-full w-fit active:scale-95 transition-transform">
+                <div className={`absolute inset-0 bg-gradient-to-r ${banner.color} to-transparent/20 flex flex-col justify-center px-6 sm:px-10 text-white max-w-lg`}>
+                  <span className="bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider w-fit mb-2">Special Offer</span>
+                  <h2 className="text-xl sm:text-3xl font-black font-headline tracking-tight mb-1">{banner.title}</h2>
+                  <p className="text-xs sm:text-sm font-medium text-white/90">{banner.subtitle}</p>
+                  <button className="mt-3.5 bg-white text-slate-900 text-xs font-bold px-4 py-2 rounded-xl w-fit shadow-sm active:scale-95 transition-transform hover:bg-slate-50">
                     Shop Now
                   </button>
                 </div>
               </div>
             ))}
             {/* Dots */}
-            <div className="absolute bottom-4 left-8 flex gap-2">
+            <div className="absolute bottom-4 right-6 flex gap-1.5 z-10">
               {banners.map((_, i) => (
-                <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentBanner ? 'w-6 bg-white' : 'w-1.5 bg-white/50'}`} />
+                <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === currentBanner ? 'w-5 bg-white' : 'w-1.5 bg-white/50'}`} />
               ))}
             </div>
           </div>
         </section>
 
         {/* Search Section */}
-        <section className="px-6 mb-8">
-          <div className="bg-white rounded-2xl flex items-center px-4 py-4 shadow-sm border border-slate-100 transition-focus-within ring-rose-500/20 focus-within:ring-4">
-            <span className="material-symbols-outlined text-slate-400 mr-3">search</span>
+        <section className="my-6">
+          <div className="bg-white rounded-2xl flex items-center px-4 py-3 shadow-sm border border-slate-200/60 focus-within:border-rose-500/50 focus-within:ring-4 focus-within:ring-rose-500/10 transition-all">
+            <span className="material-symbols-outlined text-slate-400 mr-3 text-xl">search</span>
             <input
               className="bg-transparent border-none focus:ring-0 w-full text-slate-900 placeholder:text-slate-400 outline-none text-sm font-medium"
-              placeholder="Search for food, grocery or brands"
+              placeholder="Search for food, grocery or brands..."
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} className="text-xs font-bold text-slate-400 hover:text-slate-600">
+                Clear
+              </button>
+            )}
           </div>
         </section>
 
         {/* Discover Services Slider */}
-        <section className="mb-10">
-          <div className="px-6 flex justify-between items-end mb-4">
-            <h2 className="font-headline text-xl font-black text-slate-900 tracking-tight">Discover Services</h2>
-            <Link to="/categories" className="text-rose-600 font-bold text-xs uppercase tracking-wider">View All</Link>
+        <section className="my-8">
+          <div className="flex justify-between items-end mb-4">
+            <h2 className="font-headline text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Discover Services</h2>
+            <Link to="/categories" className="text-rose-600 hover:text-rose-700 font-semibold text-xs uppercase tracking-wider">View All</Link>
           </div>
-          <div className="flex overflow-x-auto no-scrollbar gap-4 px-6 snap-x">
+          <div className="flex overflow-x-auto no-scrollbar gap-3 sm:gap-4 pb-2 snap-x -mx-4 px-4 sm:mx-0 sm:px-0">
             {services.map((service, i) => (
               <Link 
                 to={service.link} 
                 key={i}
-                className="flex-shrink-0 w-28 snap-start flex flex-col items-center group"
+                className="flex-shrink-0 w-24 sm:w-28 snap-start flex flex-col items-center group text-center"
               >
-                <div className={`${service.bg} w-20 h-20 rounded-3xl flex items-center justify-center mb-3 group-active:scale-90 transition-transform shadow-sm`}>
-                  <span className={`material-symbols-outlined text-3xl ${service.color}`} style={materialIconFill}>
+                <div className={`${service.bg} w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl flex items-center justify-center mb-2.5 group-hover:scale-105 group-active:scale-95 transition-all shadow-sm border border-black/[0.02]`}>
+                  <span className={`material-symbols-outlined text-2xl sm:text-3xl ${service.color}`} style={materialIconFill}>
                     {service.icon}
                   </span>
                 </div>
-                <span className="font-bold text-slate-800 text-sm">{service.name}</span>
-                <span className="text-[10px] text-slate-400 font-semibold">{service.tag}</span>
+                <span className="font-semibold text-slate-800 text-xs sm:text-sm line-clamp-1">{service.name}</span>
+                <span className="text-[10px] text-slate-400 font-medium">{service.tag}</span>
               </Link>
             ))}
             {!categoriesQuery.isLoading && services.length === 0 ? (
-              <div className="flex min-w-[220px] items-center rounded-[2rem] bg-white px-5 py-4 text-sm font-bold text-slate-500 shadow-sm">
-                No admin categories are active yet.
+              <div className="flex min-w-[220px] items-center rounded-2xl bg-white px-5 py-4 text-xs font-semibold text-slate-500 shadow-sm border border-slate-100">
+                No admin categories active yet.
               </div>
             ) : null}
           </div>
         </section>
 
         {/* Featured Products */}
-        <section className="px-6 mb-10">
-          <div className="flex justify-between items-baseline mb-6">
-            <h2 className="font-headline text-xl font-black text-slate-900">Featured Products</h2>
-            {productsQuery.isLoading ? (
-              <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest bg-slate-100 px-2 py-1 rounded-md animate-pulse">Loading...</span>
-            ) : (
-              <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest bg-slate-100 px-2 py-1 rounded-md">
-                {filteredProducts.length} Results
-              </span>
-            )}
+        <section className="my-8">
+          <div className="flex justify-between items-baseline mb-4">
+            <h2 className="font-headline text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Featured Products</h2>
+            <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider bg-slate-200/60 px-2.5 py-1 rounded-full">
+              {productsQuery.isLoading ? 'Loading...' : `${filteredProducts.length} Results`}
+            </span>
           </div>
 
           {productsQuery.isLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin w-8 h-8 border-4 border-slate-200 border-t-rose-600 rounded-full"></div>
+            <div className="flex justify-center py-12">
+              <div className="animate-spin w-7 h-7 border-3 border-slate-200 border-t-rose-600 rounded-full"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-x-4 gap-y-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
               {filteredProducts.map((product) => (
                 <div
                   key={product.id}
                   onClick={() => navigate(`/product/${product.id}`)}
-                  className="bg-white rounded-[2.5rem] p-3 shadow-sm border border-slate-100 flex flex-col active:scale-[0.97] transition-all duration-300 group text-left cursor-pointer hover:shadow-md"
+                  className="bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 shadow-sm border border-slate-100 flex flex-col active:scale-[0.98] transition-all duration-200 group text-left cursor-pointer hover:shadow-md hover:border-slate-200/80"
                 >
                   {/* Visual Area */}
-                  <div className="relative h-44 w-full mb-4 overflow-hidden rounded-[2rem]">
+                  <div className="relative h-36 sm:h-44 w-full mb-3 overflow-hidden rounded-xl sm:rounded-2xl bg-slate-100">
                     <img 
                       src={product.image_url || product.image_urls?.[0] || "/favicon.svg"} 
                       alt={product.name} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute top-3 right-3">
+                    <div className="absolute top-2.5 right-2.5">
                       <button 
                         onClick={(e) => toggleFavorite(e, product.id)}
-                        className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-sm active:scale-75 transition-transform"
-                        style={{
-                          color: favorites.includes(product.id) ? '#dc2626' : '#9ca3af'
-                        }}
+                        className="w-8 h-8 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-sm active:scale-75 transition-transform"
+                        style={{ color: favorites.includes(product.id) ? '#dc2626' : '#9ca3af' }}
                       >
-                        <span className="material-symbols-outlined text-xl" style={materialIconFill}>
+                        <span className="material-symbols-outlined text-lg" style={materialIconFill}>
                           {favorites.includes(product.id) ? 'favorite' : 'favorite'}
                         </span>
                       </button>
                     </div>
-                    <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-xl flex items-center gap-1">
-                      <span className="material-symbols-outlined text-amber-400 text-[14px]" style={materialIconFill}>star</span>
-                      <span className="text-[10px] font-black text-white">{product.rating || 4.5}</span>
+                    <div className="absolute bottom-2.5 left-2.5 bg-slate-900/70 backdrop-blur-md px-2 py-0.5 rounded-lg flex items-center gap-1">
+                      <span className="material-symbols-outlined text-amber-400 text-[12px]" style={materialIconFill}>star</span>
+                      <span className="text-[10px] font-bold text-white">{product.rating || 4.5}</span>
                     </div>
                   </div>
 
                   {/* Content Area */}
-                  <div className="px-2 flex-grow flex flex-col">
-                    <span className="text-[9px] font-black text-rose-600 uppercase tracking-widest mb-1">{product.category || 'Product'}</span>
-                    <h3 className="font-bold text-sm text-slate-800 leading-tight mb-3 line-clamp-2">
+                  <div className="px-1 flex-grow flex flex-col">
+                    <span className="text-[9px] font-bold text-rose-600 uppercase tracking-widest mb-0.5">{product.category || 'Product'}</span>
+                    <h3 className="font-semibold text-xs sm:text-sm text-slate-800 leading-snug mb-3 line-clamp-2">
                       {product.name}
                     </h3>
                     
-                    <div className="mt-auto flex justify-between items-center pb-1">
-                      <span className="text-lg font-black text-slate-900">${product.price}</span>
+                    <div className="mt-auto flex justify-between items-center">
+                      <span className="text-sm sm:text-base font-black text-slate-900">${product.price}</span>
                       <button 
                         onClick={(e) => addToCart(e, product)}
                         style={signatureGradient}
-                        className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-rose-200 active:scale-90 transition-all hover:rotate-90"
+                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-white shadow-md shadow-rose-500/20 active:scale-90 transition-transform"
                       >
-                        <span className="material-symbols-outlined text-xl font-bold">add</span>
+                        <span className="material-symbols-outlined text-base font-bold">add</span>
                       </button>
                     </div>
                   </div>
@@ -304,29 +284,33 @@ export const DashboardPage = () => {
 
         {/* Top Rated Vendors */}
         {!vendorsQuery.isLoading && vendors.length > 0 && (
-          <section className="px-6 mb-10">
-            <div className="flex justify-between items-end mb-6">
-              <h2 className="font-headline text-xl font-black text-slate-900 tracking-tight">Top Rated</h2>
-              <Link to="/vendors" className="text-rose-600 font-bold text-xs uppercase tracking-wider">View All</Link>
+          <section className="my-8">
+            <div className="flex justify-between items-end mb-4">
+              <h2 className="font-headline text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Top Rated Vendors</h2>
+              <Link to="/vendors" className="text-rose-600 hover:text-rose-700 font-semibold text-xs uppercase tracking-wider">View All</Link>
             </div>
-            <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {vendors.map((vendor) => (
-                <div key={vendor.id} className="bg-white rounded-[2rem] overflow-hidden flex flex-col shadow-sm border border-slate-100 group active:scale-[0.98] transition-transform duration-200 cursor-pointer" onClick={() => navigate(`/vendor/${vendor.id}`)}>
-                  <div className="h-44 relative bg-slate-200">
+                <div 
+                  key={vendor.id} 
+                  className="bg-white rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col shadow-sm border border-slate-100 group active:scale-[0.99] transition-all duration-200 cursor-pointer hover:shadow-md" 
+                  onClick={() => navigate(`/vendor/${vendor.id}`)}
+                >
+                  <div className="h-36 sm:h-40 relative bg-slate-100">
                     {vendor.logo_url && (
-                      <img alt={vendor.name} className="w-full h-full object-cover" src={vendor.logo_url} />
+                      <img alt={vendor.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={vendor.logo_url} />
                     )}
-                    <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                      <span className="material-symbols-outlined text-amber-500 text-sm" style={materialIconFill}>star</span>
+                    <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-md px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+                      <span className="material-symbols-outlined text-amber-500 text-xs" style={materialIconFill}>star</span>
                       <span className="text-xs font-black text-slate-900">{vendor.rating || 4.5}</span>
                     </div>
                   </div>
-                  <div className="p-5">
-                    <h3 className="font-black text-slate-900 text-sm mb-1">{vendor.name}</h3>
-                    <p className="text-[12px] text-slate-600 font-medium mb-3">{vendor.category || 'Restaurant'}</p>
-                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
-                      <span>{vendor.delivery_time || '20-30'} min</span>
-                      <span className="text-emerald-600">Free Delivery</span>
+                  <div className="p-4">
+                    <h3 className="font-bold text-slate-900 text-sm mb-0.5">{vendor.name}</h3>
+                    <p className="text-[11px] text-slate-500 font-medium mb-3">{vendor.category || 'Restaurant'}</p>
+                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 pt-2 border-t border-slate-100">
+                      <span>{vendor.delivery_time || '20-30'} mins</span>
+                      <span className="text-emerald-600 font-semibold">Free Delivery</span>
                     </div>
                   </div>
                 </div>
@@ -337,35 +321,41 @@ export const DashboardPage = () => {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-8 pt-4 bg-white/90 backdrop-blur-xl border-t border-slate-100 rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.04)]">
+      <nav className="fixed bottom-0 left-0 w-full z-40 flex justify-around items-center px-2 pb-6 pt-3 bg-white/95 backdrop-blur-md border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
         <Link to="/dashboard" className="flex flex-col items-center text-rose-600 flex-1">
-          <span className="material-symbols-outlined text-2xl" style={materialIconFill}>home</span>
-          <span className="text-[10px] font-black uppercase mt-1">Home</span>
+          <span className="material-symbols-outlined text-[22px]" style={materialIconFill}>home</span>
+          <span className="text-[9px] font-bold uppercase tracking-wide mt-0.5">Home</span>
         </Link>
-        <Link to="/market" className="flex flex-col items-center text-slate-400 hover:text-rose-600 transition-colors flex-1">
-          <span className="material-symbols-outlined text-2xl">storefront</span>
-          <span className="text-[10px] font-black uppercase mt-1">Market</span>
+        <Link to="/market" className="flex flex-col items-center text-slate-400 hover:text-slate-600 transition-colors flex-1">
+          <span className="material-symbols-outlined text-[22px]">storefront</span>
+          <span className="text-[9px] font-bold uppercase tracking-wide mt-0.5">Market</span>
         </Link>
-        <button onClick={() => navigate('/ride')} className="flex flex-col items-center text-slate-400 hover:text-rose-600 transition-colors flex-1">
-          <span className="material-symbols-outlined text-2xl">two_wheeler</span>
-          <span className="text-[10px] font-black uppercase mt-1">Ride</span>
+        <button onClick={() => navigate('/ride')} className="flex flex-col items-center text-slate-400 hover:text-slate-600 transition-colors flex-1">
+          <span className="material-symbols-outlined text-[22px]">two_wheeler</span>
+          <span className="text-[9px] font-bold uppercase tracking-wide mt-0.5">Ride</span>
         </button>
-        <Link to="/orders" className="flex flex-col items-center text-slate-400 hover:text-rose-600 transition-colors flex-1">
-          <span className="material-symbols-outlined text-2xl">receipt_long</span>
-          <span className="text-[10px] font-black uppercase mt-1">Orders</span>
+        <Link to="/orders" className="flex flex-col items-center text-slate-400 hover:text-slate-600 transition-colors flex-1">
+          <span className="material-symbols-outlined text-[22px]">receipt_long</span>
+          <span className="text-[9px] font-bold uppercase tracking-wide mt-0.5">Orders</span>
         </Link>
-        <Link to="/profile" className="flex flex-col items-center text-slate-400 hover:text-rose-600 transition-colors flex-1">
-          <span className="material-symbols-outlined text-2xl">person</span>
-          <span className="text-[10px] font-black uppercase mt-1">Profile</span>
+        <Link to="/profile" className="flex flex-col items-center text-slate-400 hover:text-slate-600 transition-colors flex-1">
+          <span className="material-symbols-outlined text-[22px]">person</span>
+          <span className="text-[9px] font-bold uppercase tracking-wide mt-0.5">Profile</span>
         </Link>
       </nav>
 
-      {/* Cart FAB */}
-      <button onClick={() => navigate('/cart')} style={signatureGradient} className="fixed bottom-28 right-6 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-white active:scale-90 transition-transform z-40 border-4 border-white">
-        <span className="material-symbols-outlined text-2xl">shopping_cart</span>
-        <div className="absolute -top-1 -right-1 bg-slate-900 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg">
-          {cartItems.length}
-        </div>
+      {/* Cart FAB - Fixed responsiveness with safe spacing above bottom nav */}
+      <button 
+        onClick={() => navigate('/cart')} 
+        style={signatureGradient} 
+        className="fixed right-4 sm:right-6 bottom-[calc(5rem+env(safe-area-inset-bottom))] w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-xl shadow-rose-600/30 flex items-center justify-center text-white active:scale-90 transition-transform z-50 border-2 border-white"
+      >
+        <span className="material-symbols-outlined text-xl sm:text-2xl">shopping_cart</span>
+        {cartItems.length > 0 && (
+          <div className="absolute -top-1 -right-1 bg-slate-900 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center ring-2 ring-white shadow-sm">
+            {cartItems.length}
+          </div>
+        )}
       </button>
     </div>
   );

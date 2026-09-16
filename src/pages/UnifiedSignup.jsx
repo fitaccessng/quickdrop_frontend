@@ -3,8 +3,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { RoleSelectionModal } from '../components/auth/RoleSelectionModal';
 import { unifiedSignup } from '../api/auth';
+import { getApiErrorMessage } from '../lib/errorMessage';
 import { resolvePostAuthRoute } from '../lib/authRouting';
 import { useAuthStore } from '../store/authStore';
+import {
+  handleAppleResponse,
+  handleGoogleCredentialResponse,
+  initAppleAuth,
+  initGoogleAuth,
+  triggerAppleSignIn,
+  triggerGoogleSignIn,
+} from '../api/oauth';
 import { FaApple } from "react-icons/fa";
 import quickdropLogo from "../styles/quickdrop.jpeg"; 
 
@@ -28,8 +37,40 @@ export const UnifiedSignup = () => {
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [tempSignupData, setTempSignupData] = useState(null);
 
-  const handleGoogleSignup = () => setOauthMessage('Google signup coming soon.');
-  const handleAppleSignup = () => setOauthMessage('Apple signup coming soon.');
+  const completeOAuthSignup = (data) => {
+    setSession(data.access_token, data.user, 'user');
+    navigate(resolvePostAuthRoute('user', data.user));
+  };
+
+  const handleGoogleSignup = async () => {
+    setFormError('');
+    setOauthMessage('Connecting to Google...');
+    try {
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) throw new Error('Google sign-in is not configured.');
+      await initGoogleAuth(clientId, async (response) => {
+        try {
+          completeOAuthSignup(await handleGoogleCredentialResponse(response));
+        } catch (error) {
+          setOauthMessage(error.message);
+        }
+      });
+      triggerGoogleSignIn();
+    } catch (error) {
+      setOauthMessage(error.message);
+    }
+  };
+
+  const handleAppleSignup = async () => {
+    setFormError('');
+    setOauthMessage('Connecting to Apple...');
+    try {
+      await initAppleAuth();
+      completeOAuthSignup(await handleAppleResponse(await triggerAppleSignIn()));
+    } catch (error) {
+      setOauthMessage(error.message);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -69,7 +110,7 @@ export const UnifiedSignup = () => {
     },
     onError: (error) => {
       setShowRoleModal(false);
-      setFormError(error.response?.data?.detail || 'Signup failed. Please try again.');
+      setFormError(getApiErrorMessage(error, 'Signup failed. Please try again.'));
     }
   });
 

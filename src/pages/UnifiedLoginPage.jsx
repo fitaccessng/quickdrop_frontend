@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { AuthLayout } from '../components/auth/AuthLayout';
 import { unifiedLogin } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
+import { getApiErrorMessage } from '../lib/errorMessage';
 
 export const UnifiedLoginPage = () => {
   const [email, setEmail] = useState('');
@@ -101,7 +102,7 @@ export const UnifiedLoginPage = () => {
         {error && (
           <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg">
             <p className="text-sm font-medium text-rose-600">
-              {error.response?.data?.detail || 'Login failed. Please try again.'}
+              {getApiErrorMessage(error, 'Login failed. Please try again.')}
             </p>
           </div>
         )}

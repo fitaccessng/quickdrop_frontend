@@ -35,6 +35,16 @@ export const createVendorPromotion = async (payload) => {
   return data;
 };
 
+export const updateVendorPromotion = async ({ promotionId, ...payload }) => {
+  const { data } = await http.patch(`/vendors/me/promotions/${promotionId}`, payload);
+  return data;
+};
+
+export const updateVendorPromotionStatus = async ({ promotionId, status }) => {
+  const { data } = await http.patch(`/vendors/me/promotions/${promotionId}/status`, { status });
+  return data;
+};
+
 export const fetchVendorOrders = async () => {
   const { data } = await http.get("/orders/vendor/history");
   return data;

@@ -10,6 +10,7 @@ export const NotificationsPage = () => {
   const token = useAuthStore((state) => state.token);
   const accountType = useAuthStore((state) => state.accountType);
   const userId = useAuthStore((state) => state.user?.id);
+
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ["notifications-feed", accountType, userId, "page"],
     queryFn: () => fetchNotificationFeed({ limit: 100 }),
@@ -43,81 +44,101 @@ export const NotificationsPage = () => {
   });
 
   return (
-    <div className="bg-[#f5f6f7] font-body text-slate-900 min-h-screen pb-24 antialiased">
-      <div className="bg-white border-b border-slate-200/60 sticky top-0 z-10 shadow-sm">
-        <div className="px-6 py-4 flex justify-between items-center">
-          <button 
-            onClick={() => navigate(-1)} 
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-200 active:scale-90 transition-all"
-          >
-            <span className="material-symbols-outlined text-slate-600">arrow_back</span>
-          </button>
-          <h1 className="text-lg font-black text-slate-800">Notifications</h1>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => readAllMutation.mutate()}
-              className="text-[10px] font-black uppercase tracking-widest text-slate-500"
-            >
-              Read All
-            </button>
-            <button
-              type="button"
-              onClick={() => clearMutation.mutate()}
-              className="text-[10px] font-black uppercase tracking-widest text-rose-500"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="bg-[#f7f9fb] font-sans text-[#191c1e] min-h-screen antialiased flex flex-col items-center">
+      <div className="w-full max-w-xl min-h-screen flex flex-col bg-[#f7f9fb] relative pb-32">
 
-      <main className="px-6 py-8 space-y-6">
-        {isLoading ? (
-          <div className="rounded-2xl bg-white border border-slate-200/60 shadow-sm p-8 text-center font-black uppercase tracking-widest text-slate-400">
-            Loading Notifications...
-          </div>
-        ) : notifications.length ? (
-          <div className="bg-white rounded-2xl overflow-hidden border border-slate-200/60 shadow-sm">
-            {notifications.map((item, index) => (
+        {/* Fixed Header */}
+        <header className="fixed top-0 w-full max-w-xl z-50 bg-white/90 backdrop-blur-xl border-b border-[#e0e3e5]/60 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+          <div className="h-16 px-4 flex items-center justify-between">
+            <button 
+              onClick={() => navigate(-1)} 
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-[#f2f4f6] hover:bg-[#eceef0] text-[#191c1e] transition-colors" 
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+            </button>
+            <h1 className="font-bold text-sm text-[#191c1e] uppercase tracking-wider">Notifications</h1>
+            
+            {/* Quick Action Buttons */}
+            <div className="flex items-center gap-1.5">
               <button
-                key={item.id}
                 type="button"
-                onClick={() => {
-                  if (!item.is_read) {
-                    readMutation.mutate(item.id);
-                  }
-                  if (item.action_url) {
-                    navigate(item.action_url);
-                  }
-                }}
-                className={`w-full p-5 text-left ${index !== notifications.length - 1 ? 'border-b border-slate-50' : ''}`}
+                onClick={() => readAllMutation.mutate()}
+                className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-[#f2f4f6] hover:bg-[#eceef0] text-[#565e74] transition-colors"
+                title="Mark all as read"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#ff9300]">{item.category}</p>
-                    <p className="mt-1 font-bold text-slate-800 text-sm">{item.title}</p>
-                    <p className="text-xs text-slate-500 mt-2">{item.message}</p>
-                  </div>
-                  {!item.is_read ? (
-                    <span className="rounded-full bg-[#ff9300] px-2 py-1 text-[9px] font-black uppercase text-white">
-                      New
-                    </span>
-                  ) : null}
-                </div>
-                <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-slate-300">
-                  {new Date(item.created_at).toLocaleString()}
-                </p>
+                Read All
               </button>
-            ))}
+              <button
+                type="button"
+                onClick={() => clearMutation.mutate()}
+                className="px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-[#ffdad6]/40 hover:bg-[#ffdad6] text-[#ba1a1a] transition-colors"
+                title="Clear notifications"
+              >
+                Clear
+              </button>
+            </div>
           </div>
-        ) : (
-          <div className="rounded-2xl bg-white border border-slate-200/60 shadow-sm p-10 text-center">
-            <span className="material-symbols-outlined text-5xl text-slate-300 block mb-3">notifications</span>
-            <p className="font-black text-slate-400 text-sm">No notifications yet</p>
-          </div>
-        )}
-      </main>
+        </header>
+
+        {/* Main Content Area */}
+        <main className="w-full pt-20 px-4 space-y-4 flex-1">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 space-y-3">
+              <div className="w-10 h-10 border-4 border-[#e0e3e5] border-t-[#e11d48] rounded-full animate-spin"></div>
+              <p className="text-xs font-bold text-[#565e74] uppercase tracking-wider">Syncing notifications...</p>
+            </div>
+          ) : notifications.length > 0 ? (
+            <div className="bg-white rounded-2xl overflow-hidden border border-[#e0e3e5]/60 shadow-sm divide-y divide-[#eceef0]/60">
+              {notifications.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => {
+                    if (!item.is_read) {
+                      readMutation.mutate(item.id);
+                    }
+                    if (item.action_url) {
+                      navigate(item.action_url);
+                    }
+                  }}
+                  className={`w-full p-4 text-left transition-colors hover:bg-[#f2f4f6]/60 flex flex-col gap-2 ${!item.is_read ? 'bg-[#f7f9fb]/80' : ''}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-[#f2f4f6] text-[#565e74] border border-[#e0e3e5]">
+                        {item.category || 'Update'}
+                      </span>
+                      {!item.is_read && (
+                        <span className="w-2 h-2 rounded-full bg-[#e11d48] animate-pulse"></span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-mono text-[#565e74]">
+                      {new Date(item.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                    </span>
+                  </div>
+
+                  <div className="space-y-0.5">
+                    <p className="font-bold text-xs text-[#191c1e]">{item.title}</p>
+                    <p className="text-xs text-[#565e74] leading-relaxed">{item.message}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center pt-24 text-center px-6">
+              <div className="w-16 h-16 bg-[#f2f4f6] rounded-full flex items-center justify-center mb-4 text-[#565e74] border border-[#e0e3e5]">
+                <span className="material-symbols-outlined text-3xl">notifications_off</span>
+              </div>
+              <h3 className="font-bold text-base text-[#191c1e] mb-1">No Notifications Yet</h3>
+              <p className="text-xs text-[#565e74] max-w-xs leading-relaxed">
+                When you receive updates regarding orders, deliveries, or system alerts, they will appear right here.
+              </p>
+            </div>
+          )}
+        </main>
+
+      </div>
     </div>
   );
 };

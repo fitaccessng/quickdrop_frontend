@@ -4,6 +4,14 @@ import { useMutation } from '@tanstack/react-query';
 import { unifiedLogin } from '../api/auth';
 import { resolvePostAuthRoute } from '../lib/authRouting';
 import { useAuthStore } from '../store/authStore';
+import {
+  handleAppleResponse,
+  handleGoogleCredentialResponse,
+  initAppleAuth,
+  initGoogleAuth,
+  triggerAppleSignIn,
+  triggerGoogleSignIn,
+} from '../api/oauth';
 import { FaApple } from "react-icons/fa";
 import quickdropLogo from "../styles/quickdrop.jpeg";
 
@@ -18,8 +26,40 @@ export const UnifiedLogin = () => {
   const [formError, setFormError] = useState('');
   const [oauthMessage, setOauthMessage] = useState('');
 
-  const handleGoogleLogin = () => setOauthMessage('Google sign-in coming soon.');
-  const handleAppleLogin = () => setOauthMessage('Apple sign-in coming soon.');
+  const completeOAuthLogin = (data) => {
+    setSession(data.access_token, data.user, 'user');
+    navigate(resolvePostAuthRoute('user', data.user));
+  };
+
+  const handleGoogleLogin = async () => {
+    setFormError('');
+    setOauthMessage('Connecting to Google...');
+    try {
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) throw new Error('Google sign-in is not configured.');
+      await initGoogleAuth(clientId, async (response) => {
+        try {
+          completeOAuthLogin(await handleGoogleCredentialResponse(response));
+        } catch (error) {
+          setOauthMessage(error.message);
+        }
+      });
+      triggerGoogleSignIn();
+    } catch (error) {
+      setOauthMessage(error.message);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    setFormError('');
+    setOauthMessage('Connecting to Apple...');
+    try {
+      await initAppleAuth();
+      completeOAuthLogin(await handleAppleResponse(await triggerAppleSignIn()));
+    } catch (error) {
+      setOauthMessage(error.message);
+    }
+  };
 
   const loginMutation = useMutation({
     mutationFn: unifiedLogin,

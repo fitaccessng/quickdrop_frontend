@@ -7,7 +7,7 @@ import { fetchProducts } from "../api/products";
 import { fetchVendorAnalytics, fetchVendorOrders, fetchVendorProfile } from "../api/vendorPortal";
 import { QuickDropLogo } from "../components/branding/QuickDropLogo";
 import { formatMoney } from "../lib/utils";
-import { getInventoryStats, getOrderMetrics, getPopularProducts } from "../lib/vendorPortal";
+import { getInventoryStats } from "../lib/vendorPortal";
 
 export const VendorDashboard = () => {
   const navigate = useNavigate();
@@ -26,9 +26,17 @@ export const VendorDashboard = () => {
   const analytics = analyticsQuery.data;
   const orders = ordersQuery.data ?? [];
   const products = productsQuery.data ?? [];
-  const orderMetrics = useMemo(() => getOrderMetrics(orders), [orders]);
   const inventoryStats = useMemo(() => getInventoryStats(products), [products]);
-  const popularProducts = useMemo(() => getPopularProducts(orders).slice(0, 3), [orders]);
+  const popularProducts = (analytics?.top_products ?? []).slice(0, 3).map((product) => ({
+    ...product,
+    units: product.units_sold,
+  }));
+  const orderMetrics = {
+    dailyRevenue: analytics?.daily_revenue ?? 0,
+    pending: analytics?.pending_orders ?? 0,
+    active: analytics?.active_orders ?? 0,
+    completed: analytics?.completed_orders ?? 0,
+  };
 
   const materialIconFill = { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" };
 
@@ -50,7 +58,7 @@ export const VendorDashboard = () => {
         <div className="h-9 w-9 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
           <img
             alt="Vendor Profile"
-            src={vendor?.logo_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuCfkB6cjWDXmZMSFKo0Zulkq3Ztp0U3KQntRZ_3-11cpX1vGFwTMCraj72aKbnHKPJQobLtqQffUqhFVpny2_I4mqm5sym2U7Da55rmkZ5bW5MT-ZrS9VaeWvfXoUZt2GaR3QC3kadzF8Rxtu5XHcjZOfGU53jsVVcjURHiO6U3looOC1xv52QDs59UIKtGwAvvpAs7NXwNhbL_L9X4lgndA8mtZgWzB893O64lkuacVcdjhQ20wlFgXgDnOsBor0wM5BdlE0unYBAh"}
+            src={vendor?.logo_url || "/favicon.svg"}
             className="h-full w-full object-cover"
           />
         </div>

@@ -19,15 +19,16 @@ export const RiderDashboardPage = () => {
     refetchInterval: 3000,
     refetchOnWindowFocus: true,
   });
+  const isOnline = (dashboard?.rider?.rider_status || "offline") !== "offline";
   const rideQueueQuery = useQuery({
     queryKey: ["rider-ride-queue"],
     queryFn: fetchRiderRideQueue,
     refetchInterval: 3000,
     refetchOnWindowFocus: true,
+    enabled: isOnline,
   });
 
   const [statusMessage, setStatusMessage] = useState("");
-  const isOnline = (dashboard?.rider?.rider_status || "offline") !== "offline";
   const activeRide = (rideQueueQuery.data ?? []).find((ride) => ride.rider?.id === dashboard?.rider?.id && ride.status !== "completed" && ride.status !== "cancelled");
   const pendingRideRequests = (rideQueueQuery.data ?? []).filter((ride) => ride.rider?.id == null || ride.rider?.id === dashboard?.rider?.id).length;
 
@@ -38,6 +39,7 @@ export const RiderDashboardPage = () => {
       setStatusMessage(`Rider is now ${data.rider_status}.`);
       queryClient.invalidateQueries({ queryKey: ["rider-dashboard"] });
       queryClient.invalidateQueries({ queryKey: ["rider-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["rider-ride-queue"] });
     },
   });
 
@@ -113,7 +115,7 @@ export const RiderDashboardPage = () => {
             </nav>
             <button
               type="button"
-              onClick={() => navigate("/profile/notifications")}
+              onClick={() => navigate("/rider/notifications")}
               className="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-sm border border-slate-100 hover:opacity-80 transition-all active:scale-95"
             >
               <span className="material-symbols-outlined text-[#5a5c58]">notifications</span>

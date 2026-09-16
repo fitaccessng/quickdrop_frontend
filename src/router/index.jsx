@@ -143,6 +143,14 @@ export const router = createHashRouter([
           </VendorProtectedRoute>
         ),
       },
+      {
+        path: "vendor/notifications",
+        element: (
+          <VendorProtectedRoute>
+            <NotificationsPage />
+          </VendorProtectedRoute>
+        ),
+      },
       { path: "rider/signup", element: <RiderSignupPage /> },
       { path: "rider/login", element: <RiderLoginPage /> },
       { path: "rider/forgot-password", element: <RiderForgotPasswordPage /> },
@@ -262,6 +270,14 @@ export const router = createHashRouter([
         ),
       },
       {
+        path: "admin/notifications",
+        element: (
+          <AdminProtectedRoute>
+            <NotificationsPage />
+          </AdminProtectedRoute>
+        ),
+      },
+      {
         path: "rider/dashboard",
         element: (
           <RiderProtectedRoute>
@@ -325,7 +341,22 @@ export const router = createHashRouter([
           </RiderProtectedRoute>
         ),
       },
-      { path: "orders", element: <OrdersPage /> },
+      {
+        path: "rider/notifications",
+        element: (
+          <RiderProtectedRoute>
+            <NotificationsPage />
+          </RiderProtectedRoute>
+        ),
+      },
+      {
+        path: "orders",
+        element: (
+          <ProtectedRoute>
+            <OrdersPage />
+          </ProtectedRoute>
+        ),
+      },
       {
         path: "ride",
         element: (
@@ -342,14 +373,70 @@ export const router = createHashRouter([
           </ProtectedRoute>
         ),
       },
-      { path: "profile", element: <ProfilePage /> },
-      { path: "profile/personal", element: <PersonalInformationPage /> },
-      { path: "profile/payments", element: <PaymentMethodsPage /> },
-      { path: "profile/orders", element: <OrderHistoryPage /> },
-      { path: "profile/notifications", element: <NotificationsPage /> },
-      { path: "profile/security", element: <PrivacySecurityPage /> },
-      { path: "profile/help", element: <HelpCenterPage /> },
-      { path: "profile/terms", element: <TermsOfServicePage /> },
+      {
+        path: "profile",
+        element: (
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "profile/personal",
+        element: (
+          <ProtectedRoute>
+            <PersonalInformationPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "profile/payments",
+        element: (
+          <ProtectedRoute>
+            <PaymentMethodsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "profile/orders",
+        element: (
+          <ProtectedRoute>
+            <OrderHistoryPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "profile/notifications",
+        element: (
+          <ProtectedRoute>
+            <NotificationsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "profile/security",
+        element: (
+          <ProtectedRoute>
+            <PrivacySecurityPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "profile/help",
+        element: (
+          <ProtectedRoute>
+            <HelpCenterPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "profile/terms",
+        element: (
+          <ProtectedRoute>
+            <TermsOfServicePage />
+          </ProtectedRoute>
+        ),
+      },
 
       {
         path: "checkout",

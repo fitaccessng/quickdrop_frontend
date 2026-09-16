@@ -15,24 +15,33 @@ export const VendorPortalLayout = ({ title, eyebrow, subtitle, avatarUrl, childr
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#fffaf4_0%,#fff4e8_35%,#ffffff_100%)] text-slate-900">
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-72 bg-[radial-gradient(circle_at_top,#fdba74_0%,rgba(253,186,116,0.18)_38%,transparent_76%)]" />
+    <div className="h-full bg-[linear-gradient(180deg,#fffaf4_0%,#fff4e8_40%,#f8fafc_100%)] text-slate-900 flex flex-col font-body selection:bg-[#ff9300] selection:text-white">
+      
+      {/* Decorative Background Glow */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-0 h-80 bg-[radial-gradient(circle_at_top,#ff9300_0%,rgba(255,147,0,0.1)_45%,transparent_80%)] opacity-60" />
 
-      <header className="sticky top-0 z-40 border-b border-white/70 bg-white/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+      {/* Sticky Header Bar */}
+      <header className="sticky top-0 z-40 border-b border-orange-100/60 bg-white/85 backdrop-blur-2xl shadow-sm">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition active:scale-95"
+              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200/80 bg-slate-50 text-slate-700 shadow-sm transition active:scale-95 hover:bg-slate-100"
             >
-              <span className="material-symbols-outlined">arrow_back</span>
+              <span className="material-symbols-outlined text-lg">arrow_back</span>
             </button>
             <div className="flex min-w-0 items-center gap-3">
-              <QuickDropLogo size={44} />
+              <div className="rounded-2xl border border-orange-100 p-1 bg-orange-50/50 shadow-sm shrink-0">
+                <QuickDropLogo size={36} />
+              </div>
               <div className="min-w-0">
-                <p className="truncate text-[10px] font-black uppercase tracking-[0.28em] text-[#ff9300]">{eyebrow}</p>
-                <h1 className="truncate font-headline text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+                {eyebrow && (
+                  <p className="truncate text-[10px] font-black uppercase tracking-[0.25em] text-[#ff9300]">
+                    {eyebrow}
+                  </p>
+                )}
+                <h1 className="truncate font-headline text-lg sm:text-xl font-black tracking-tight text-slate-950">
                   {title}
                 </h1>
               </div>
@@ -41,34 +50,51 @@ export const VendorPortalLayout = ({ title, eyebrow, subtitle, avatarUrl, childr
 
           <div className="flex items-center gap-3">
             {actions}
-            <div className="h-11 w-11 overflow-hidden rounded-full border border-slate-200 bg-slate-100 shadow-sm">
-              {avatarUrl ? <img src={avatarUrl} alt="Vendor" className="h-full w-full object-cover" /> : null}
+            <div className="h-10 w-10 overflow-hidden rounded-2xl border border-orange-200 bg-orange-50 shadow-sm shrink-0 flex items-center justify-center">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Vendor" className="h-full w-full object-cover" />
+              ) : (
+                <span className="material-symbols-outlined text-slate-400 text-lg">person</span>
+              )}
             </div>
           </div>
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto max-w-6xl px-4 pb-28 pt-6 sm:px-6">
-        <section className="mb-8 rounded-[2rem] border border-white/80 bg-white/80 px-5 py-6 shadow-[0_30px_70px_-55px_rgba(15,23,42,0.8)] sm:px-7">
-          <p className="max-w-2xl text-sm leading-6 text-slate-500 sm:text-base">{subtitle}</p>
-        </section>
+      {/* Main Content Area */}
+      <main className="relative z-10 mx-auto max-w-6xl w-full px-4 pb-28 pt-6 sm:px-6 flex-1">
+        {subtitle && (
+          <section className="mb-6 rounded-[2.5rem] border border-orange-100/85 bg-white/90 px-6 py-5 shadow-[0_15px_35px_rgba(255,147,0,0.08)] backdrop-blur-md sm:px-8">
+            <div className="flex items-center gap-3">
+              <div className="w-2 h-2 rounded-full bg-[#ff9300] shrink-0 animate-pulse" />
+              <p className="text-xs sm:text-sm font-medium leading-relaxed text-slate-600">
+                {subtitle}
+              </p>
+            </div>
+          </section>
+        )}
         {children}
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/70 bg-white/92 px-2 pb-5 pt-2 backdrop-blur-2xl">
-        <div className="mx-auto grid max-w-6xl grid-cols-5 gap-1">
+      {/* Modern Floating Bottom Navigation Bar */}
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200/60 bg-white/95 px-3 pb-6 pt-3 backdrop-blur-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.06)]">
+        <div className="mx-auto grid max-w-lg grid-cols-5 gap-1.5 bg-slate-100/70 p-1.5 rounded-[2rem] border border-slate-200/60">
           {navItems.map((item) => {
             const active = location.pathname === item.to;
             return (
               <Link
                 key={item.to}
                 to={item.to}
-                className={`flex flex-col items-center justify-center rounded-[1.2rem] px-2 py-3 transition ${
-                  active ? "bg-[#fff4e6] text-[#ff9300]" : "text-slate-400 hover:text-slate-700"
+                className={`flex flex-col items-center justify-center rounded-[1.5rem] py-2.5 transition-all duration-200 ${
+                  active 
+                    ? "bg-[#ff9300] text-white shadow-md shadow-orange-500/25 scale-[1.02]" 
+                    : "text-slate-400 hover:text-slate-700 hover:bg-white/50"
                 }`}
               >
-                <span className="material-symbols-outlined text-[22px]">{item.icon}</span>
-                <span className="mt-1 text-[9px] font-black uppercase tracking-[0.2em]">{item.label}</span>
+                <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                <span className={`mt-0.5 text-[9px] font-black uppercase tracking-wider ${active ? "text-white" : "text-slate-500"}`}>
+                  {item.label}
+                </span>
               </Link>
             );
           })}

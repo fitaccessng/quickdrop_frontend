@@ -87,6 +87,12 @@ export const LandingPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchFeedback, setSearchFeedback] = useState("");
 
+  const isNativeApp = import.meta.env.VITE_NATIVE_APP === "true" || window.Capacitor?.isNativePlatform?.();
+
+  useEffect(() => {
+    if (isNativeApp) navigate("/login", { replace: true });
+  }, [isNativeApp, navigate]);
+
   // Fetch only approved vendors
   const { data: vendors = [], isLoading } = useQuery({
     queryKey: ["approved-vendors"],
@@ -176,6 +182,8 @@ export const LandingPage = () => {
       { enableHighAccuracy: true, maximumAge: 300000, timeout: 10000 },
     );
   }, []);
+
+  if (isNativeApp) return null;
 
   return (
     <div className="bg-white font-body overflow-x-hidden">
@@ -434,8 +442,9 @@ export const LandingPage = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
               {vendors.slice(0, 3).map((vendor, idx) => (
-                <div
+                <Link
                   key={vendor.id}
+                  to={`/vendor/${vendor.id}`}
                   className={`group cursor-pointer rounded-[2rem] md:rounded-[3rem] overflow-hidden bg-white shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 ${idx === 0 ? 'md:col-span-2' : ''} flex flex-col`}
                 >
                   <div className={idx === 0 ? "relative h-[250px] md:h-[400px]" : "relative h-[200px] md:h-[250px]"}>
@@ -454,7 +463,7 @@ export const LandingPage = () => {
                       <span className="text-black font-semibold text-sm md:text-xl">{vendor.prep_time_minutes ? `${vendor.prep_time_minutes} min` : "Live"}</span>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}

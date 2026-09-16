@@ -9,12 +9,12 @@ export const resolveApiBaseUrl = () => {
   const origin = hasWindow ? window.location.origin : "";
   const isLocalFrontend = ["localhost", "127.0.0.1"].includes(hostname);
 
-  if (isLocalFrontend) {
-    return "http://localhost:8000";
-  }
-
   if (configuredBaseUrl) {
     return configuredBaseUrl;
+  }
+
+  if (isLocalFrontend) {
+    return "http://localhost:8000";
   }
 
   if (origin) {
@@ -48,14 +48,28 @@ http.interceptors.request.use((config) => {
   
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
-  } else {
-    // Debug: log when no token is found
-    const stored = localStorage.getItem("quickdrop-auth");
-    if (stored) {
-      console.warn("Token not found in auth store or localStorage. Stored data:", stored);
-    }
   }
   return config;
 });
+
+http.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const requestUrl = error.config?.url || "";
+    const { token, accountType, clearSession } = useAuthStore.getState();
+
+    if (status === 401 && token && !requestUrl.includes("/auth/")) {
+      clearSession();
+      localStorage.removeItem("quickdrop-auth");
+      if (typeof window !== "undefined") {
+        const route = accountType === "vendor" ? "/vendor/login" : accountType === "rider" ? "/rider/login" : accountType === "admin" ? "/admin/login" : "/login";
+        window.location.hash = route;
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
 
 export default http;

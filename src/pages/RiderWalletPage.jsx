@@ -22,7 +22,7 @@ export const RiderWalletPage = () => {
   const payoutMutation = useMutation({
     mutationFn: createRiderPayoutRequest,
     onSuccess: () => {
-      setMessage("Withdrawal request submitted.");
+      setMessage("Withdrawal request submitted successfully.");
       setAmount("");
       setNote("");
       queryClient.invalidateQueries({ queryKey: ["rider-wallet"] });
@@ -40,213 +40,246 @@ export const RiderWalletPage = () => {
   }, [wallet?.recent_deliveries]);
 
   if (isLoading) {
-    return <div className="p-10 text-center font-black uppercase tracking-widest text-slate-400">Loading Wallet...</div>;
+    return (
+      <div className="fixed inset-0 bg-slate-50 flex flex-col items-center justify-center gap-3">
+        <span className="w-8 h-8 border-4 border-[#ff9300] border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Loading Wallet...</span>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-white pt-20 font-body antialiased text-slate-900">
-      <header className="fixed top-0 z-50 flex w-full items-center justify-between bg-white px-6 py-4">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white border border-slate-200 text-[#5a5c58] hover:bg-slate-50 transition-all active:scale-90"
-          >
-            <span className="material-symbols-outlined text-xl">arrow_back_ios_new</span>
-          </button>
+    <div className="fixed inset-0 bg-slate-100 flex justify-center items-center font-sans overflow-hidden select-none sm:py-6">
+      {/* Mobile Shell Frame */}
+      <div className="w-full max-w-md h-full sm:h-[92vh] bg-white sm:rounded-[2.5rem] flex flex-col overflow-hidden shadow-2xl sm:border sm:border-slate-200 relative">
 
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#4e6300] hidden sm:block">payments</span>
-            <h4 className="text-sm font-black text-[#4e6300] tracking-tight uppercase">Rider Wallet</h4>
+        {/* Mobile Header */}
+        <header className="shrink-0 bg-white/90 backdrop-blur-md px-5 pt-4 pb-3 border-b border-slate-100 z-20 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="w-10 h-10 rounded-full bg-slate-100 active:bg-slate-200 flex items-center justify-center text-slate-800 transition-all cursor-pointer"
+              aria-label="Go back"
+            >
+              <span className="material-symbols-outlined text-xl">arrow_back</span>
+            </button>
+            <div>
+              <span className="text-[10px] font-black text-[#ff9300] uppercase tracking-wider block">Financials</span>
+              <h4 className="text-slate-900 font-extrabold text-base tracking-tight leading-none">Rider Wallet</h4>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate("/profile/notifications")}
-            className="relative flex items-center justify-center w-10 h-10 rounded-full bg-white border border-slate-200 text-[#5a5c58] hover:text-[#ff8c00] transition-all active:scale-95 shadow-sm"
+            onClick={() => navigate("/rider/notifications")}
+            className="relative w-10 h-10 rounded-full bg-slate-100 active:bg-slate-200 flex items-center justify-center text-slate-800 transition-all cursor-pointer"
+            aria-label="Notifications"
           >
-            <span className="material-symbols-outlined">notifications</span>
+            <span className="material-symbols-outlined text-xl">notifications</span>
             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
           </button>
-        </div>
-      </header>
+        </header>
 
-      <main className="mx-auto max-w-5xl px-6 pb-32 space-y-8">
-        <section className="mb-10">
-          <p className="text-[10px] font-black tracking-[0.2em] text-[#3a5f94] uppercase mb-2">Financial Overview</p>
-          <h2 className="text-4xl font-extrabold tracking-tight text-[#0A192F]">Wallet & Earnings</h2>
-        </section>
+        {/* Scrollable Main Body */}
+        <main className="flex-1 overflow-y-auto px-5 py-6 space-y-6 text-slate-800 scrollbar-none pb-32">
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="md:col-span-2 bg-gradient-to-br from-[#0A192F] to-[#1e293b] p-8 rounded-[2.5rem] text-white relative overflow-hidden flex flex-col justify-between min-h-[280px] shadow-xl">
-            <div className="relative z-10">
-              <span className="text-sm font-semibold opacity-60 mb-1 block">Available for Withdrawal</span>
-              <h3 className="text-5xl font-black mb-8">{formatMoney(wallet?.wallet_balance ?? 0)}</h3>
-              <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
-                  className="rounded-2xl px-4 py-4 text-sm font-bold text-slate-900"
-                  placeholder="Withdrawal amount"
-                />
-                <input
-                  value={note}
-                  onChange={(event) => setNote(event.target.value)}
-                  className="rounded-2xl px-4 py-4 text-sm font-bold text-slate-900"
-                  placeholder="Optional note"
-                />
+          {/* Primary Balance Hero Card */}
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 rounded-[2rem] text-white relative overflow-hidden shadow-xl">
+            <div className="relative z-10 space-y-4">
+              <div>
+                <span className="text-xs font-bold text-slate-400 block mb-1">Available for Withdrawal</span>
+                <h3 className="text-4xl font-black tracking-tight">{formatMoney(wallet?.wallet_balance ?? 0)}</h3>
+              </div>
+
+              {/* Instant Payout Form Controls */}
+              <div className="space-y-3 pt-2 border-t border-slate-800">
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                    className="w-full bg-slate-800/80 border border-slate-700/80 rounded-2xl px-3.5 py-3 text-xs sm:text-sm font-semibold text-white focus:outline-none focus:border-[#ff9300] placeholder:text-slate-500 transition-all"
+                    placeholder="Amount (R)"
+                  />
+                  <input
+                    type="text"
+                    value={note}
+                    onChange={(event) => setNote(event.target.value)}
+                    className="w-full bg-slate-800/80 border border-slate-700/80 rounded-2xl px-3.5 py-3 text-xs sm:text-sm font-semibold text-white focus:outline-none focus:border-[#ff9300] placeholder:text-slate-500 transition-all"
+                    placeholder="Note (optional)"
+                  />
+                </div>
+
                 <button
+                  type="button"
                   onClick={() => {
                     setMessage("");
                     payoutMutation.mutate({ amount: Number(amount), note: note || null });
                   }}
                   disabled={payoutMutation.isPending || !amount}
-                  className="bg-white text-[#0A192F] px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-[#ff8c00] hover:text-white active:scale-95 transition-all shadow-lg disabled:opacity-60"
+                  className="w-full bg-[#ff9300] active:bg-orange-600 text-white font-bold py-3.5 text-xs sm:text-sm uppercase tracking-wider rounded-2xl shadow-lg shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
-                  <span className="material-symbols-outlined text-lg">account_balance_wallet</span>
-                  Withdraw
+                  {payoutMutation.isPending ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Requesting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-lg">account_balance_wallet</span>
+                      <span>Request Payout</span>
+                    </>
+                  )}
                 </button>
+                {message && (
+                  <p className="text-xs font-semibold text-orange-300 text-center">{message}</p>
+                )}
               </div>
-              {message ? <p className="mt-4 text-sm font-bold text-orange-200">{message}</p> : null}
             </div>
-            <div className="absolute -right-12 -bottom-12 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute right-8 top-8 opacity-10">
-              <span className="material-symbols-outlined text-[140px]" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
+
+            {/* Background Decorative Accent */}
+            <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-[#ff9300]/15 rounded-full blur-2xl pointer-events-none" />
+          </div>
+
+          {/* Quick Metrics Grid */}
+          <div className="grid grid-cols-2 gap-3">
+            <MetricCard 
+              icon="today" 
+              label="Today's Earnings" 
+              value={formatMoney(todayEarnings)} 
+              badge="Live" 
+            />
+            <MetricCard 
+              icon="verified" 
+              label="Completed Drops" 
+              value={wallet?.completed_deliveries ?? 0} 
+              unit="trips" 
+            />
+            <MetricCard 
+              icon="payments" 
+              label="Total Revenue" 
+              value={formatMoney(wallet?.total_earnings ?? 0)} 
+            />
+            <MetricCard 
+              icon="hourglass_top" 
+              label="Payout Ready" 
+              value={formatMoney(wallet?.available_payout ?? 0)} 
+            />
+          </div>
+
+          {/* Recent Activity Section */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center px-1">
+              <h4 className="text-slate-900 font-extrabold text-sm tracking-tight uppercase">Recent Deliveries</h4>
+              <span className="text-[11px] font-bold text-slate-400">Latest earnings</span>
             </div>
-          </div>
 
-          <div className="bg-[#d5e3ff] p-8 rounded-[2.5rem] text-[#001b3c] flex flex-col justify-center shadow-sm">
-            <div className="mb-6">
-              <span className="text-[10px] font-black uppercase tracking-widest opacity-60 block mb-2">Today's Earnings</span>
-              <p className="text-3xl font-black">{formatMoney(todayEarnings)}</p>
-              <p className="text-xs font-bold text-[#3a5f94] mt-2 flex items-center gap-1 uppercase tracking-tighter">
-                <span className="material-symbols-outlined text-sm">trending_up</span>
-                Live Activity
-              </p>
-            </div>
-            <p className="text-[10px] mt-4 font-black opacity-40 uppercase tracking-widest">
-              Based on completed deliveries updated today
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <div className="grid grid-cols-2 gap-4">
-            <MetricCard icon="distance" label="Completed Drops" value={wallet?.completed_deliveries ?? 0} unit="trips" color="text-[#904d00]" />
-            <MetricCard icon="timer" label="Payout Ready" value={formatMoney(wallet?.available_payout ?? 0)} unit="" color="text-[#3a5f94]" />
-            <MetricCard icon="avg_pace" label="Total Revenue" value={formatMoney(wallet?.total_earnings ?? 0)} unit="" color="text-[#904d00]" />
-            <MetricCard icon="account_balance" label="Requests" value={wallet?.payout_requests?.length ?? 0} unit="" color="text-[#3a5f94]" />
-          </div>
-
-          <div className="bg-[#003e7d] text-white p-8 rounded-[2.5rem] flex flex-col justify-center relative overflow-hidden shadow-lg">
-            <div className="z-10">
-              <h5 className="text-xl font-black mb-2 uppercase tracking-tight">Withdrawal Requests</h5>
-              <p className="text-sm opacity-70 leading-relaxed">
-                Submit a payout request from your wallet balance. Recent requests appear below for easy tracking.
-              </p>
-            </div>
-            <span className="material-symbols-outlined text-8xl opacity-10 absolute right-4 top-1/2 -translate-y-1/2">verified</span>
-          </div>
-        </div>
-
-        <section className="mb-12">
-          <div className="flex justify-between items-center mb-6">
-            <h4 className="text-2xl font-black text-[#0A192F]">Recent Activity</h4>
-          </div>
-
-          <div className="space-y-4">
-            {(wallet?.recent_deliveries ?? []).length > 0 ? (
-              wallet.recent_deliveries.map((order) => (
-                <div key={order.id} className="group bg-white p-5 rounded-3xl flex items-center justify-between hover:shadow-md transition-all border border-slate-100">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center text-[#ff8c00]">
-                      <span className="material-symbols-outlined">delivery_dining</span>
+            <div className="space-y-2.5">
+              {(wallet?.recent_deliveries ?? []).length > 0 ? (
+                wallet.recent_deliveries.map((order) => (
+                  <div key={order.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#ff9300] flex items-center justify-center shrink-0 border border-orange-100">
+                        <span className="material-symbols-outlined text-lg">delivery_dining</span>
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900 text-xs sm:text-sm">{order.order_reference}</p>
+                        <p className="text-[11px] text-slate-500 font-medium truncate max-w-[140px]">{order.vendor?.name || "QuickDrop Vendor"}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-black text-[#0A192F]">{order.order_reference}</p>
-                      <p className="text-xs text-slate-400 font-bold uppercase tracking-tighter">
-                        {order.vendor?.name}
-                      </p>
+                    <div className="text-right">
+                      <p className="font-extrabold text-slate-900 text-xs sm:text-sm">+{formatMoney(order.delivery_fee)}</p>
+                      <span className="text-[9px] bg-orange-50 text-[#ff9300] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border border-orange-100">
+                        {order.status}
+                      </span>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-black text-[#0A192F]">+{formatMoney(order.delivery_fee)}</p>
-                    <span className="text-[10px] bg-orange-100 text-[#ff8c00] px-3 py-1 rounded-full font-black uppercase tracking-widest">
-                      {order.status}
+                ))
+              ) : (
+                <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs font-semibold">
+                  No recent deliveries found.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Withdrawal Requests Section */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center px-1">
+              <h4 className="text-slate-900 font-extrabold text-sm tracking-tight uppercase">Payout Requests</h4>
+              <span className="text-[11px] font-bold text-slate-400">History</span>
+            </div>
+
+            <div className="space-y-2.5">
+              {(wallet?.payout_requests ?? []).length > 0 ? (
+                wallet.payout_requests.map((request) => (
+                  <div key={request.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="font-extrabold text-slate-900 text-xs sm:text-sm">{formatMoney(request.amount)}</p>
+                      <p className="text-[10px] text-slate-500 font-medium">{new Date(request.created_at).toLocaleString()}</p>
+                      {request.note && <p className="text-[11px] text-slate-600 mt-0.5 italic">{request.note}</p>}
+                    </div>
+                    <span className="text-[9px] bg-slate-200/70 text-slate-700 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+                      {request.status}
                     </span>
                   </div>
+                ))
+              ) : (
+                <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-slate-400 text-xs font-semibold">
+                  No withdrawal requests yet.
                 </div>
-              ))
-            ) : (
-              <div className="p-10 text-center bg-white rounded-3xl border-2 border-dashed border-slate-100 text-slate-400 font-bold">
-                No recent transactions found.
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </section>
 
-        <section className="mb-12">
-          <div className="flex justify-between items-center mb-6">
-            <h4 className="text-2xl font-black text-[#0A192F]">Withdrawal Requests</h4>
-          </div>
-          <div className="space-y-4">
-            {(wallet?.payout_requests ?? []).length ? (
-              wallet.payout_requests.map((request) => (
-                <div key={request.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-black text-[#0A192F]">{formatMoney(request.amount)}</p>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-tighter">
-                      {new Date(request.created_at).toLocaleString()}
-                    </p>
-                    {request.note ? <p className="text-xs text-slate-500 mt-1">{request.note}</p> : null}
-                  </div>
-                  <span className="text-[10px] bg-slate-100 text-slate-700 px-3 py-1 rounded-full font-black uppercase tracking-widest">
-                    {request.status}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div className="p-10 text-center bg-white rounded-3xl border-2 border-dashed border-slate-100 text-slate-400 font-bold">
-                No withdrawal requests yet.
-              </div>
-            )}
-          </div>
-        </section>
-      </main>
+        </main>
 
-      <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-4 bg-white/90 backdrop-blur-2xl z-50 rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.04)] border-t border-slate-100">
-        <NavItem to="/rider/dashboard" icon="home" />
-        <NavItem to="/rider/wallet" icon="payments" active />
-        <NavItem to="/rider/orders" icon="receipt_long" />
-        <NavItem to="/rider/profile" icon="person" />
-      </nav>
+        {/* Mobile Navigation Footer Bar */}
+        <nav className="absolute bottom-0 left-0 right-0 h-20 bg-white/90 backdrop-blur-md border-t border-slate-100 z-30 px-6 flex items-center justify-around">
+          <NavItem to="/rider/dashboard" icon="home" label="Home" />
+          <NavItem to="/rider/wallet" icon="payments" label="Wallet" active />
+          <NavItem to="/rider/orders" icon="receipt_long" label="Orders" />
+          <NavItem to="/rider/profile" icon="person" label="Profile" />
+        </nav>
+
+      </div>
     </div>
   );
 };
 
-const MetricCard = ({ icon, label, value, unit, color }) => (
-  <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-    <span className={`material-symbols-outlined ${color} mb-3`}>{icon}</span>
-    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-    <p className="text-xl font-black text-[#0A192F] mt-1">
-      {value} <span className="text-[10px] font-bold text-slate-300">{unit}</span>
-    </p>
+const MetricCard = ({ icon, label, value, unit, badge }) => (
+  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-between relative overflow-hidden">
+    {badge && (
+      <span className="absolute top-3 right-3 text-[9px] font-extrabold text-[#ff9300] bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-widest">
+        {badge}
+      </span>
+    )}
+    <div className="w-8 h-8 rounded-xl bg-orange-50 text-[#ff9300] flex items-center justify-center mb-3 border border-orange-100">
+      <span className="material-symbols-outlined text-base">{icon}</span>
+    </div>
+    <div>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{label}</p>
+      <p className="text-base sm:text-lg font-extrabold text-slate-900 mt-0.5">
+        {value} {unit && <span className="text-[10px] text-slate-400 font-semibold">{unit}</span>}
+      </p>
+    </div>
   </div>
 );
 
-const NavItem = ({ to, icon, active = false }) => (
+const NavItem = ({ to, icon, label, active = false }) => (
   <Link
     to={to}
-    className={`flex flex-col items-center justify-center rounded-full p-3 w-14 h-14 transition-all duration-300 ${
-      active ? "bg-[#ff8c00] text-white scale-110 shadow-lg shadow-orange-500/40" : "text-slate-400 hover:text-[#0A192F]"
+    className={`flex flex-col items-center justify-center gap-1 transition-all duration-300 ${
+      active ? "text-[#ff9300]" : "text-slate-400 hover:text-slate-600"
     }`}
   >
-    <span className="material-symbols-outlined" style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}>
-      {icon}
-    </span>
+    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${active ? "bg-orange-50 border border-orange-100 shadow-sm" : ""}`}>
+      <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}>
+        {icon}
+      </span>
+    </div>
+    <span className="text-[10px] font-bold tracking-tight">{label}</span>
   </Link>
 );

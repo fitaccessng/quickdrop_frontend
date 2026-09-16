@@ -4,12 +4,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
 import { fetchVendorOrders, fetchVendorProfile, updateVendorOrder } from "../api/vendorPortal";
+import { getApiErrorMessage } from "../lib/errorMessage";
 import { formatMoney } from "../lib/utils";
+import { useOrderRealtime } from "../hooks/useOrderRealtime";
 
 export const VendorOrdersPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("incoming");
+  const [actionError, setActionError] = useState("");
 
   const profileQuery = useQuery({ queryKey: ["vendor-profile"], queryFn: fetchVendorProfile });
   const ordersQuery = useQuery({ queryKey: ["vendor-orders"], queryFn: fetchVendorOrders });
@@ -17,10 +20,12 @@ export const VendorOrdersPage = () => {
   const updateMutation = useMutation({
     mutationFn: updateVendorOrder,
     onSuccess: () => {
+      setActionError("");
       queryClient.invalidateQueries({ queryKey: ["vendor-orders"] });
       queryClient.invalidateQueries({ queryKey: ["vendor-orders-preview"] });
       queryClient.invalidateQueries({ queryKey: ["vendor-analytics"] });
     },
+    onError: (error) => setActionError(getApiErrorMessage(error, "Unable to update this order right now.")),
   });
 
   const orders = ordersQuery.data ?? [];
@@ -50,7 +55,7 @@ export const VendorOrdersPage = () => {
         <div className="h-10 w-10 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
           <img
             alt="Vendor Profile"
-            src={profileQuery.data?.logo_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuDt3oVfFpK37eociAJQHv_k4tqskwQNe5UUCZ5gxsev5nRQdbJwZXL0VkRZo0vR3fgO-OA2U3SNMA6fSy8uwaqQvNDAXjpQg9hfSdR-aBCsbz2AfeUOrF6Oy7IOo5hP1xcJki4ZFV8FlwrtFTGlQMrEXUaHk_sQeKIsKZSwo5UaxW4zSX2opzRD6Zqb-7cbaSD9OneV1jiv4tSD4ExwaBjDfhsnSK4FnaNhLns7sIky2-8Bck3dUTUGjP-xii49lv0UAO6P2oUQEXLr"}
+            src={profileQuery.data?.logo_url || "/favicon.svg"}
             className="h-full w-full object-cover"
           />
         </div>
@@ -106,7 +111,57 @@ export const VendorOrdersPage = () => {
         {/* Live Filtered Request Stream Stack */}
         <div className="space-y-4 md:space-y-6">
           {filteredOrders.map((order) => (
-            <div key={order.id} className="group relative overflow-hidden rounded-3xl bg-white p-4 md:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100">
+            <VendorOrderCard
+              key={order.id}
+              order={order}
+              onOrderEvent={() => {
+                queryClient.invalidateQueries({ queryKey: ["vendor-orders"] });
+                queryClient.invalidateQueries({ queryKey: ["vendor-orders-preview"] });
+              }}
+            />
+          ))}
+
+          {/* Empty Request Stack Interface */}
+          {!filteredOrders.length && !ordersQuery.isLoading && (
+            <div className="py-16 text-center bg-white rounded-3xl border border-slate-100">
+              <span className="material-symbols-outlined text-slate-300 text-4xl mb-2">inventory_2</span>
+              <p className="text-slate-400 text-xs font-medium">No orders found in this category.</p>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Global Bottom Navigation Dock */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] flex justify-around items-center px-2 pb-5 pt-2 safe-bottom">
+        <NavButton icon="storefront" label="Shop" onClick={() => navigate("/vendor/dashboard")} />
+        <NavButton icon="shopping_bag" label="Orders" onClick={() => navigate("/vendor/orders")} active={true} />
+
+        {/* Action Insertion Fab Pin */}
+        <div className="relative w-12 h-12 flex justify-center items-center">
+          <button
+            onClick={() => navigate("/vendor/upload-product")}
+            className="absolute -top-5 rounded-full border-4 border-white bg-slate-900 p-3 text-white shadow-lg transition-all active:scale-95"
+          >
+            <span className="material-symbols-outlined flex items-center justify-center text-xl" style={materialIconFill}>add</span>
+          </button>
+        </div>
+
+        <NavButton icon="analytics" label="Insights" onClick={() => navigate("/vendor/analytics")} />
+        <NavButton icon="person" label="Profile" onClick={() => navigate("/vendor/profile")} />
+      </nav>
+    </div>
+  );
+};
+
+const VendorOrderCard = ({ order, onOrderEvent }) => {
+  const { connectionState } = useOrderRealtime({
+    orderId: order.id,
+    onOrderEvent,
+  });
+
+  return (
+    <div className="group relative overflow-hidden rounded-3xl bg-white p-4 md:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100">
+              <span className="sr-only">Realtime order connection: {connectionState}</span>
               
               {/* Card Meta Row */}
               <div className="relative z-10 mb-4 flex justify-between items-start gap-4">
@@ -137,7 +192,7 @@ export const VendorOrdersPage = () => {
                     <div className="h-10 w-10 md:h-12 md:w-12 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-white shadow-sm">
                       <img
                         alt={order.customer.full_name}
-                        src={order.customer.avatar_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuCNsOyY7C8NhorlMRxXsRz1qxLWgqRD77IctmsvhwgJjHx5lIdwAvrxJ9xkzZ5bkf1Q-0Xt_eqlKQ1gnm4b9sPDom45w3oBEep0LYhtBLmiiXDyDBpAHyDTuO4A8KwyOJlsGf4AYWl2PCyotzTGnxn26JW9exRmMlCFFwQlKHXAJ8AC541PC--0-o-wY5K2eBummRKn06PjbJClzWPm07LmUR_92x4Ej6N_fUDUwXGAMwIlm-PMLYRes1kIJ1iiG17LgB4U_ZdT_Q_5"}
+                        src={order.customer.avatar_url || "/favicon.svg"}
                         className="h-full w-full object-cover"
                       />
                     </div>
@@ -196,12 +251,22 @@ export const VendorOrdersPage = () => {
                   </div>
                 )}
 
-                {order.status !== "pending" && !["delivered", "cancelled"].includes(order.status) && (
-                  <div className="grid grid-cols-3 gap-1.5 w-full">
+                {[
+                  ...(order.status === "confirmed"
+                    ? [{ status: "preparing", label: "Preparing" }, { status: "cancelled", label: "Cancel" }]
+                    : []),
+                  ...(order.status === "preparing"
+                    ? [{ status: "rider_assigned", label: "Ready" }, { status: "cancelled", label: "Cancel" }]
+                    : []),
+                ].length > 0 && (
+                  <div className="grid grid-cols-2 gap-1.5 w-full">
                     {[
-                      { status: "preparing", label: "Preparing" },
-                      { status: "rider_assigned", label: "Ready" },
-                      { status: "delivered", label: "Complete" },
+                      ...(order.status === "confirmed"
+                        ? [{ status: "preparing", label: "Preparing" }, { status: "cancelled", label: "Cancel" }]
+                        : []),
+                      ...(order.status === "preparing"
+                        ? [{ status: "rider_assigned", label: "Ready" }, { status: "cancelled", label: "Cancel" }]
+                        : []),
                     ].map((action) => {
                       const isCurrentState = order.status === action.status;
                       return (
@@ -229,6 +294,12 @@ export const VendorOrdersPage = () => {
                   </div>
                 )}
 
+                {actionError && (
+                  <div className="w-full rounded-xl border border-red-100 bg-red-50 px-3 py-2.5 text-[11px] font-medium text-red-600">
+                    {actionError}
+                  </div>
+                )}
+
                 {/* Context Logs Overlays */}
                 {order.tracking_note && (
                   <div className="w-full rounded-xl bg-slate-50 border border-slate-100 px-3 py-2.5 text-[11px] font-medium text-slate-500">
@@ -243,37 +314,6 @@ export const VendorOrdersPage = () => {
                 )}
               </div>
             </div>
-          ))}
-
-          {/* Empty Request Stack Interface */}
-          {!filteredOrders.length && !ordersQuery.isLoading && (
-            <div className="py-16 text-center bg-white rounded-3xl border border-slate-100">
-              <span className="material-symbols-outlined text-slate-300 text-4xl mb-2">inventory_2</span>
-              <p className="text-slate-400 text-xs font-medium">No orders found in this category.</p>
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* Global Bottom Navigation Dock */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] flex justify-around items-center px-2 pb-5 pt-2 safe-bottom">
-        <NavButton icon="storefront" label="Shop" onClick={() => navigate("/vendor/dashboard")} />
-        <NavButton icon="shopping_bag" label="Orders" onClick={() => navigate("/vendor/orders")} active={true} />
-
-        {/* Action Insertion Fab Pin */}
-        <div className="relative w-12 h-12 flex justify-center items-center">
-          <button
-            onClick={() => navigate("/vendor/upload-product")}
-            className="absolute -top-5 rounded-full border-4 border-white bg-slate-900 p-3 text-white shadow-lg transition-all active:scale-95"
-          >
-            <span className="material-symbols-outlined flex items-center justify-center text-xl" style={materialIconFill}>add</span>
-          </button>
-        </div>
-
-        <NavButton icon="analytics" label="Insights" onClick={() => navigate("/vendor/analytics")} />
-        <NavButton icon="person" label="Profile" onClick={() => navigate("/vendor/profile")} />
-      </nav>
-    </div>
   );
 };
 

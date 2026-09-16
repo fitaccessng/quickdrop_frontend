@@ -9,6 +9,7 @@ import {
   fetchVendorProfile,
   updateVendorProfile,
 } from "../api/vendorPortal";
+import { getApiErrorMessage } from "../lib/errorMessage";
 import { useLogout } from "../hooks/useLogout";
 import { formatMoney } from "../lib/utils";
 import { maskAccountNumber } from "../lib/vendorPortal";
@@ -101,7 +102,7 @@ export const VendorProfilePage = () => {
               <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-white/10 bg-slate-800">
                 <img
                   alt="Store Logo"
-                  src={profile?.logo_url || "https://ui-avatars.com/api/?name=Vendor&background=ff9300&color=fff"}
+                  src={profile?.logo_url || "/favicon.svg"}
                   className="h-full w-full object-cover"
                 />
               </div>
@@ -372,10 +373,10 @@ export const VendorProfilePage = () => {
                 )}
 
                 {updateMutation.isError ? (
-                  <p className="text-sm text-red-500">{updateMutation.error?.response?.data?.detail || "Unable to save changes."}</p>
+                  <p className="text-sm text-red-500">{getApiErrorMessage(updateMutation.error, "Unable to save changes.")}</p>
                 ) : null}
                 {payoutMutation.isError ? (
-                  <p className="text-sm text-red-500">{payoutMutation.error?.response?.data?.detail || "Unable to submit payout request."}</p>
+                  <p className="text-sm text-red-500">{getApiErrorMessage(payoutMutation.error, "Unable to submit payout request.")}</p>
                 ) : null}
               </div>
             </motion.div>

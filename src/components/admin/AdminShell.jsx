@@ -41,7 +41,7 @@ export const AdminShell = ({ title, subtitle, children }) => {
           <button onClick={toggleTheme} className="mt-4 rounded-2xl bg-white/10 px-4 py-3 text-xs font-black uppercase tracking-widest text-white">
             {theme === "dark" ? "Light mode" : "Dark mode"}
           </button>
-          <Link to="/profile/notifications" className="mt-3 flex items-center justify-between rounded-2xl bg-white/10 px-4 py-3 text-xs font-black uppercase tracking-widest text-white">
+          <Link to="/admin/notifications" className="mt-3 flex items-center justify-between rounded-2xl bg-white/10 px-4 py-3 text-xs font-black uppercase tracking-widest text-white">
             <span>Notifications</span>
             {unreadCount ? <span className="rounded-full bg-[#ff9300] px-2 py-1 text-[10px]">{unreadCount}</span> : null}
           </Link>

@@ -22,7 +22,12 @@ export const RiderForgotPasswordPage = () => {
             <p className="text-xs font-black uppercase tracking-widest text-slate-500">Reset token</p>
             <p className="mt-3 break-all font-mono text-sm text-slate-900">{mutation.data?.reset_token}</p>
           </div>
-          <Link to="/rider/login" className="block w-full rounded-xl bg-slate-900 py-4 text-center font-bold text-white">Back to rider login</Link>
+          <Link
+            to={`/reset-password?token=${encodeURIComponent(mutation.data?.reset_token || "")}`}
+            className="block w-full rounded-xl bg-slate-900 py-4 text-center font-bold text-white"
+          >
+            Continue to reset password
+          </Link>
         </div>
       ) : (
         <form

@@ -91,7 +91,7 @@ export const RiderProfilePage = () => {
         </h1>
 
         <button
-          onClick={() => navigate("/profile/notifications")}
+          onClick={() => navigate("/rider/notifications")}
           className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 border border-slate-200 text-[#0A192F] active:scale-90 transition-transform"
         >
           <span className="material-symbols-outlined text-xl">notifications</span>

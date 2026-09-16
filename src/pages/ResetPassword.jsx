@@ -19,9 +19,9 @@ export const ResetPassword = () => {
   const mutation = useMutation({
     mutationFn: resetUserPassword,
     onSuccess: (data) => {
-      setSession(data.access_token, data.user);
+      setSession(data.access_token, data.user, data.account_type || "user");
       setSubmitted(true);
-      setTimeout(() => navigate('/dashboard'), 2000);
+      setTimeout(() => navigate(data.account_type === "rider" ? '/rider/dashboard' : '/dashboard'), 2000);
     },
   });
 

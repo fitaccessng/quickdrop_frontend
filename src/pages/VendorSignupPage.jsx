@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { AuthLayout } from "../components/auth/AuthLayout";
 import { registerVendor } from "../api/auth";
 import { FaApple } from "react-icons/fa";
+import { getApiErrorMessage } from "../lib/errorMessage";
 
 const initialState = {
   business_name: "",
@@ -93,7 +94,7 @@ export const VendorSignupPage = () => {
       // Don't auto-login, let them log in to trigger onboarding check
       navigate("/vendor/login");
     },
-    onError: (err) => setFormError(err.response?.data?.detail || "Registration failed")
+    onError: (err) => setFormError(getApiErrorMessage(err, "Registration failed"))
   });
 
   const handleChange = (e) => {

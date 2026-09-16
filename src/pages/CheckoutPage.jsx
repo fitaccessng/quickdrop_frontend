@@ -36,17 +36,17 @@ const SelectionSheet = ({ title, options, field, value, isOpen, onClose, onSelec
       onClick={onClose} 
     />
     <div 
-      className={`fixed bottom-0 left-0 w-full z-[101] bg-white rounded-t-[2.5rem] p-8 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] shadow-2xl ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
+      className={`fixed bottom-0 left-0 w-full z-[101] bg-white rounded-t-[2.5rem] p-6 sm:p-8 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] shadow-2xl ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}
     >
       <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-6" />
-      <h3 className="font-headline font-black text-lg uppercase tracking-widest mb-6 text-center text-slate-900">{title}</h3>
+      <h3 className="font-headline font-black text-base sm:text-lg uppercase tracking-widest mb-6 text-center text-slate-900">{title}</h3>
       <div className="max-h-[45vh] overflow-y-auto space-y-2 no-scrollbar pb-10">
         {options.map((opt) => (
           <button
             key={opt}
             type="button"
             onClick={() => onSelect(field, opt)}
-            className={`w-full p-5 rounded-2xl text-left font-bold transition-all flex justify-between items-center ${
+            className={`w-full p-4 sm:p-5 rounded-2xl text-left font-bold transition-all flex justify-between items-center ${
               value === opt ? 'bg-rose-50 text-rose-600' : 'text-slate-600 active:bg-slate-50'
             }`}
           >
@@ -70,7 +70,7 @@ const IconInput = ({ icon, name, placeholder, type = "text", value, onChange }) 
       value={value || ""}
       onChange={onChange}
       placeholder={placeholder}
-      className="w-full min-w-0 pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 placeholder:text-slate-300 focus:ring-2 ring-rose-500/10 transition-all"
+      className="w-full min-w-0 pl-12 pr-4 py-3.5 sm:py-4 bg-slate-50 border-none rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder:text-slate-300 focus:ring-2 ring-rose-500/10 transition-all"
     />
   </div>
 );
@@ -256,6 +256,7 @@ export const CheckoutPage = () => {
         address_latitude: addressForm.latitude ?? browserLocation.latitude,
         address_longitude: addressForm.longitude ?? browserLocation.longitude,
         payment_method: paymentMethod,
+        delivery_speed: deliverySpeed,
         items: items.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
       }
     : null;
@@ -319,16 +320,16 @@ export const CheckoutPage = () => {
 
   return (
     <div className="bg-slate-50 font-body text-slate-900 min-h-screen">
-      <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 flex justify-between items-center px-4 sm:px-6 py-4">
+      <header className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-xl border-b border-slate-100 flex justify-between items-center px-4 sm:px-6 py-3.5">
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-50 text-slate-900 border border-slate-100 active:scale-90 transition-transform">
             <span className="material-symbols-outlined text-xl">arrow_back_ios_new</span>
           </button>
-          <h1 className="text-sm font-black text-rose-700 font-headline tracking-widest uppercase">Checkout</h1>
+          <h1 className="text-xs sm:text-sm font-black text-rose-700 font-headline tracking-widest uppercase">Checkout</h1>
         </div>
       </header>
 
-      <main className="pt-24 pb-48 px-4 sm:px-5 max-w-lg mx-auto space-y-6 sm:space-y-8">
+      <main className="pt-20 pb-44 px-4 sm:px-6 max-w-xl mx-auto space-y-6 sm:space-y-8">
         {paymentFailed ? (
           <section className="rounded-[2rem] border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-orange-50 p-5 shadow-sm">
             <div className="flex items-start gap-4">
@@ -339,8 +340,8 @@ export const CheckoutPage = () => {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-rose-600">Payment Failed</p>
-                <h2 className="mt-1 text-lg font-black text-slate-900">Paystack did not confirm this checkout.</h2>
-                <p className="mt-2 text-sm font-medium leading-6 text-slate-600">
+                <h2 className="mt-1 text-base sm:text-lg font-black text-slate-900">Paystack did not confirm this checkout.</h2>
+                <p className="mt-2 text-xs sm:text-sm font-medium leading-relaxed text-slate-600">
                   Your order was not completed. Review your details and try the Paystack payment again, or switch to cash on delivery.
                 </p>
                 {failedReference ? (
@@ -368,16 +369,16 @@ export const CheckoutPage = () => {
         ) : null}
         
         {/* Customer Details */}
-        <section className="space-y-4">
-          <h2 className="font-headline text-lg font-black tracking-tight px-1 uppercase">Customer Details</h2>
-          <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 space-y-3">
+        <section className="space-y-3">
+          <h2 className="font-headline text-base sm:text-lg font-black tracking-tight px-1 uppercase">Customer Details</h2>
+          <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-6 shadow-sm border border-slate-100 space-y-3">
             <IconInput icon="person" name="full_name" placeholder="Full Name" value={contactForm.full_name} onChange={handleContactChange} />
             <IconInput icon="call" name="phone" placeholder="Phone Number" type="tel" value={contactForm.phone} onChange={handleContactChange} />
             <IconInput icon="mail" name="email" placeholder="Email Address" type="email" value={contactForm.email} onChange={handleContactChange} />
             <button
               type="button"
               onClick={() => updateProfileMutation.mutate({ full_name: contactForm.full_name, phone: contactForm.phone, email: contactForm.email })}
-              className="mt-2 w-full py-4 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] active:scale-95 transition-transform"
+              className="mt-2 w-full py-3.5 sm:py-4 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] active:scale-95 transition-transform"
             >
               {updateProfileMutation.isPending ? "Saving profile..." : "Save customer details"}
             </button>
@@ -385,8 +386,8 @@ export const CheckoutPage = () => {
         </section>
 
         {/* Shipping Section */}
-        <section className="space-y-4">
-          <h2 className="font-headline text-lg font-black tracking-tight px-1 uppercase">Shipping To</h2>
+        <section className="space-y-3">
+          <h2 className="font-headline text-base sm:text-lg font-black tracking-tight px-1 uppercase">Shipping To</h2>
           
           <div className="grid gap-3">
             {(profileQuery.data?.addresses ?? []).map((address) => (
@@ -394,33 +395,33 @@ export const CheckoutPage = () => {
                 type="button"
                 key={address.id}
                 onClick={() => handleAddressSelect(address)}
-                className={`p-5 rounded-[2rem] text-left border-2 transition-all flex items-start gap-4 ${
+                className={`p-4 sm:p-5 rounded-[1.75rem] sm:rounded-[2rem] text-left border-2 transition-all flex items-start gap-3.5 sm:gap-4 ${
                   (addressMode === "existing" && selectedAddressId === address.id) ? "border-rose-600 bg-white shadow-md" : "border-transparent bg-white/60 text-slate-400"
                 }`}
               >
-                <span className="material-symbols-outlined mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>
+                <span className="material-symbols-outlined mt-0.5 text-lg sm:text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
                   {address.label === "Home" ? "home" : "work"}
                 </span>
-                <div className="flex-1">
-                  <p className="font-black text-sm text-slate-900 leading-none mb-1">{address.label}</p>
-                  <p className="text-xs font-bold opacity-80">{address.line1}, {address.city}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-black text-xs sm:text-sm text-slate-900 leading-none mb-1">{address.label}</p>
+                  <p className="text-xs font-bold opacity-80 truncate">{address.line1}, {address.city}</p>
                 </div>
               </button>
             ))}
             <button
               type="button"
               onClick={openNewAddressMode}
-              className={`rounded-[2rem] border-2 px-5 py-4 text-left transition-all ${
+              className={`rounded-[1.75rem] sm:rounded-[2rem] border-2 px-4 sm:px-5 py-4 text-left transition-all ${
                 addressMode === "new" ? "border-rose-600 bg-white shadow-md" : "border-dashed border-slate-200 bg-white/70"
               }`}
             >
-              <p className="text-sm font-black text-slate-900">Add new address</p>
-              <p className="mt-1 text-xs font-bold text-slate-400">Use a separate address without overwriting your saved ones.</p>
+              <p className="text-xs sm:text-sm font-black text-slate-900">Add new address</p>
+              <p className="mt-1 text-[11px] sm:text-xs font-bold text-slate-400">Use a separate address without overwriting your saved ones.</p>
             </button>
           </div>
 
           {/* Form Context Panel */}
-          <div className="bg-white rounded-[2.5rem] p-5 sm:p-6 shadow-sm border border-slate-100 space-y-3">
+          <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-6 shadow-sm border border-slate-100 space-y-3">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">
               {addressMode === "new" ? "New South Africa Address" : "Edit Selected Address"}
             </p>
@@ -433,7 +434,7 @@ export const CheckoutPage = () => {
               <button 
                 type="button"
                 onClick={() => setActiveSheet('state')}
-                className="flex items-center gap-3 pl-4 pr-2 py-4 bg-slate-50 rounded-2xl text-left active:bg-slate-100 transition-colors"
+                className="flex items-center gap-3 pl-4 pr-2 py-3.5 sm:py-4 bg-slate-50 rounded-2xl text-left active:bg-slate-100 transition-colors"
               >
                 <span className="material-symbols-outlined text-slate-300 text-xl">map</span>
                 <div className="flex-1 overflow-hidden">
@@ -445,7 +446,7 @@ export const CheckoutPage = () => {
               <button 
                 type="button"
                 onClick={() => setActiveSheet('city')}
-                className="flex items-center gap-3 pl-4 pr-2 py-4 bg-slate-50 rounded-2xl text-left active:bg-slate-100 transition-colors"
+                className="flex items-center gap-3 pl-4 pr-2 py-3.5 sm:py-4 bg-slate-50 rounded-2xl text-left active:bg-slate-100 transition-colors"
               >
                 <span className="material-symbols-outlined text-slate-300 text-xl">location_city</span>
                 <div className="flex-1 overflow-hidden">
@@ -457,15 +458,15 @@ export const CheckoutPage = () => {
 
             <IconInput icon="pin_drop" name="postal_code" placeholder="Postal Code" value={addressForm.postal_code} onChange={handleInputChange} />
             
-            <div className="rounded-2xl bg-slate-50 px-4 py-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Delivery Notes</p>
+            <div className="rounded-2xl bg-slate-50 px-4 py-3.5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Delivery Notes</p>
               <textarea
                 name="delivery_notes"
                 rows={3}
                 value={addressForm.delivery_notes || ""}
                 onChange={handleInputChange}
                 placeholder="Gate code, landmark, or rider instructions"
-                className="mt-2 w-full resize-none bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 border-none focus:ring-0 p-0"
+                className="w-full resize-none bg-transparent text-xs sm:text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 border-none focus:ring-0 p-0"
               />
             </div>
             
@@ -478,7 +479,7 @@ export const CheckoutPage = () => {
                   createAddressMutation.mutate(addressForm);
                 }
               }}
-              className="mt-2 w-full py-4 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] active:scale-95 transition-transform"
+              className="mt-2 w-full py-3.5 sm:py-4 rounded-2xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-[0.2em] active:scale-95 transition-transform"
             >
               {createAddressMutation.isPending || updateAddressMutation.isPending
                 ? "Saving address..."
@@ -490,24 +491,24 @@ export const CheckoutPage = () => {
         </section>
 
         {/* Delivery Speed Section */}
-        <section className="space-y-4">
-          <h2 className="font-headline text-lg font-black tracking-tight px-1 uppercase">Delivery Speed</h2>
+        <section className="space-y-3">
+          <h2 className="font-headline text-base sm:text-lg font-black tracking-tight px-1 uppercase">Delivery Speed</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button 
               type="button"
               onClick={() => setDeliverySpeed('priority')}
-              className={`p-6 rounded-[2rem] text-left transition-all border-2 ${deliverySpeed === 'priority' ? 'border-rose-600 bg-white shadow-md' : 'border-transparent bg-white/60'}`}
+              className={`p-5 sm:p-6 rounded-[1.75rem] sm:rounded-[2rem] text-left transition-all border-2 ${deliverySpeed === 'priority' ? 'border-rose-600 bg-white shadow-md' : 'border-transparent bg-white/60'}`}
             >
-              <span className="material-symbols-outlined text-rose-600 mb-2" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
+              <span className="material-symbols-outlined text-rose-600 mb-2 text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
               <p className="font-black text-xs uppercase">Priority</p>
               <p className="text-[10px] font-bold text-slate-400 mt-1">15-30 mins</p>
             </button>
             <button 
               type="button"
               onClick={() => setDeliverySpeed('standard')}
-              className={`p-6 rounded-[2rem] text-left transition-all border-2 ${deliverySpeed === 'standard' ? 'border-rose-600 bg-white shadow-md' : 'border-transparent bg-white/60'}`}
+              className={`p-5 sm:p-6 rounded-[1.75rem] sm:rounded-[2rem] text-left transition-all border-2 ${deliverySpeed === 'standard' ? 'border-rose-600 bg-white shadow-md' : 'border-transparent bg-white/60'}`}
             >
-              <span className="material-symbols-outlined text-slate-400 mb-2">schedule</span>
+              <span className="material-symbols-outlined text-slate-400 mb-2 text-xl">schedule</span>
               <p className="font-black text-xs uppercase text-slate-400">Standard</p>
               <p className="text-[10px] font-bold text-slate-300 mt-1">Next Hour</p>
             </button>
@@ -515,10 +516,10 @@ export const CheckoutPage = () => {
         </section>
 
         {/* Payment Section */}
-        <section className="space-y-4">
-          <h2 className="font-headline text-lg font-black tracking-tight px-1 uppercase">Payment</h2>
-          <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <section className="space-y-3">
+          <h2 className="font-headline text-base sm:text-lg font-black tracking-tight px-1 uppercase">Payment</h2>
+          <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-6 shadow-sm border border-slate-100 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
               {[
                 { id: "paystack", label: "Paystack", icon: "credit_card" },
                 { id: "cash_on_delivery", label: "Cash", icon: "payments" },
@@ -527,7 +528,7 @@ export const CheckoutPage = () => {
                   key={option.id}
                   type="button"
                   onClick={() => setPaymentMethod(option.id)}
-                  className={`rounded-[1.5rem] border px-3 py-4 text-left transition-all ${paymentMethod === option.id ? "border-rose-600 bg-rose-50" : "border-slate-100 bg-slate-50"}`}
+                  className={`rounded-2xl border px-4 py-4 text-left transition-all ${paymentMethod === option.id ? "border-rose-600 bg-rose-50" : "border-slate-100 bg-slate-50"}`}
                 >
                   <span className="material-symbols-outlined text-slate-700">{option.icon}</span>
                   <p className="mt-2 text-[10px] font-black uppercase tracking-wider text-slate-900">{option.label}</p>
@@ -535,15 +536,15 @@ export const CheckoutPage = () => {
               ))}
             </div>
             {paymentMethod === "paystack" ? (
-              <div className="rounded-[1.75rem] bg-slate-50 px-4 py-4 text-sm text-slate-600">
-                <p className="font-black text-slate-900">Secure online payment</p>
-                <p className="mt-2">
+              <div className="rounded-2xl bg-slate-50 px-4 py-3.5 text-xs text-slate-600">
+                <p className="font-black text-slate-900 mb-1">Secure online payment</p>
+                <p>
                   You will be redirected to Paystack to complete your payment, then brought back to QuickDrop after verification.
                 </p>
               </div>
             ) : null}
             {paymentFailed ? (
-              <div className="rounded-[1.75rem] border border-rose-100 bg-rose-50 px-4 py-4 text-sm text-rose-700">
+              <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3.5 text-xs text-rose-700">
                 Paystack could not confirm your payment. Use the banner above to retry or switch payment method.
               </div>
             ) : null}
@@ -552,25 +553,25 @@ export const CheckoutPage = () => {
         </section>
 
         {/* Summary Details */}
-        <section className="p-8 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
+        <section className="p-6 sm:p-8 bg-white rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
           <div className="space-y-4">
             {items.map((item) => (
-              <div key={item.lineKey || item.productId} className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 overflow-hidden rounded-2xl bg-slate-100">
+              <div key={item.lineKey || item.productId} className="flex justify-between items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl bg-slate-100">
                     {getCartItemImage(item) ? <img src={getCartItemImage(item)} alt={item.productName} className="h-full w-full object-cover" /> : null}
                   </div>
-                  <div>
-                    <span className="text-[10px] font-black text-rose-600 bg-rose-50 px-2 py-1 rounded-lg">{item.quantity}x</span>
-                    <p className="mt-2 font-bold text-xs text-slate-700">{item.productName}</p>
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">{item.quantity}x</span>
+                    <p className="mt-1 font-bold text-xs text-slate-700 truncate">{item.productName}</p>
                   </div>
                 </div>
-                <span className="font-bold text-xs text-slate-900">{formatMoney(item.unitPrice * item.quantity)}</span>
+                <span className="font-bold text-xs text-slate-900 shrink-0">{formatMoney(item.unitPrice * item.quantity)}</span>
               </div>
             ))}
           </div>
 
-          <div className="h-px bg-slate-50"></div>
+          <div className="h-px bg-slate-100"></div>
 
           <div className="space-y-3 text-[11px] font-black uppercase tracking-widest text-slate-400">
             <div className="flex justify-between">
@@ -583,7 +584,7 @@ export const CheckoutPage = () => {
             </div>
             <div className="flex justify-between items-center pt-2 text-rose-600">
               <span className="text-xs">Grand Total</span>
-              <span className="text-3xl tracking-tighter text-slate-900">{formatMoney(totals.total_amount)}</span>
+              <span className="text-2xl sm:text-3xl tracking-tighter text-slate-900">{formatMoney(totals.total_amount)}</span>
             </div>
           </div>
         </section>
@@ -611,36 +612,39 @@ export const CheckoutPage = () => {
       />
 
       {/* CTA Footer */}
-      <footer className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-2xl pt-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] px-4 sm:px-8 z-50 border-t border-slate-100">
-        <button
-          type="button"
-          disabled={!canCheckout || checkoutMutation.isPending || paystackMutation.isPending}
-          onClick={() => {
-            const payload = {
-              address_id: selectedAddressId ?? profileQuery.data?.addresses?.[0]?.id,
-              address_latitude: addressForm.latitude ?? browserLocation.latitude,
-              address_longitude: addressForm.longitude ?? browserLocation.longitude,
-              payment_method: paymentMethod,
-              payment_reference: paymentMethod === "cash_on_delivery" ? paymentForm.reference : undefined,
-              items: items.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
-            };
+      <footer className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-md pt-3.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] px-4 sm:px-8 z-50 border-t border-slate-100 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
+        <div className="max-w-xl mx-auto">
+          <button
+            type="button"
+            disabled={!canCheckout || checkoutMutation.isPending || paystackMutation.isPending}
+            onClick={() => {
+              const payload = {
+                address_id: selectedAddressId ?? profileQuery.data?.addresses?.[0]?.id,
+                address_latitude: addressForm.latitude ?? browserLocation.latitude,
+                address_longitude: addressForm.longitude ?? browserLocation.longitude,
+                payment_method: paymentMethod,
+                payment_reference: paymentMethod === "cash_on_delivery" ? paymentForm.reference : undefined,
+                delivery_speed: deliverySpeed,
+                items: items.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
+              };
 
-            if (paymentMethod === "paystack") {
-              paystackMutation.mutate(payload);
-              return;
-            }
+              if (paymentMethod === "paystack") {
+                paystackMutation.mutate(payload);
+                return;
+              }
 
-            checkoutMutation.mutate(payload);
-          }}
-          className={`w-full py-5 rounded-2xl text-white font-headline font-black text-lg shadow-xl active:scale-[0.98] transition-all duration-300 ${!canCheckout ? 'bg-slate-200 shadow-none' : ''}`}
-          style={canCheckout ? { background: signatureGradient } : {}}
-        >
-          {checkoutMutation.isPending || paystackMutation.isPending
-            ? "PROCESSING..."
-            : paymentMethod === "paystack"
-              ? `CONTINUE TO PAYSTACK • ${formatMoney(totals.total_amount)}`
-              : `PLACE ORDER • ${formatMoney(totals.total_amount)}`}
-        </button>
+              checkoutMutation.mutate(payload);
+            }}
+            className={`w-full h-12 sm:h-14 rounded-2xl text-white font-headline font-black text-sm sm:text-base shadow-lg shadow-rose-200 active:scale-[0.98] transition-all duration-300 flex items-center justify-center ${!canCheckout ? 'bg-slate-200 shadow-none' : ''}`}
+            style={canCheckout ? { background: signatureGradient } : {}}
+          >
+            {checkoutMutation.isPending || paystackMutation.isPending
+              ? "PROCESSING..."
+              : paymentMethod === "paystack"
+                ? `CONTINUE TO PAYSTACK • ${formatMoney(totals.total_amount)}`
+                : `PLACE ORDER • ${formatMoney(totals.total_amount)}`}
+          </button>
+        </div>
       </footer>
     </div>
   );

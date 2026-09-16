@@ -8,20 +8,11 @@ export const OrdersPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Active');
 
-  // Design constants
-  const signatureGradient = {
-    background: 'linear-gradient(135deg, #b61321 0%, #ff7670 100%)',
-  };
-
-  const materialIconFill = {
-    fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24"
-  };
-
-  // Fetch orders from backend
+  // Fetch orders from backend with real-time poll fallback
   const ordersQuery = useQuery({
     queryKey: ['user-orders'],
     queryFn: fetchUserOrders,
-    refetchInterval: 10000,
+    refetchInterval: 12000,
     refetchOnWindowFocus: true,
   });
 
@@ -31,141 +22,182 @@ export const OrdersPage = () => {
     ? orders.filter(o => ['pending', 'confirmed', 'preparing', 'rider_assigned', 'on_the_way'].includes(o.status)) 
     : orders.filter(o => ['delivered', 'cancelled'].includes(o.status));
 
+  const getStatusBadgeStyle = (status) => {
+    if (['delivered'].includes(status)) {
+      return 'bg-[#6ffbbe]/20 text-[#006847] border-[#6ffbbe]/30';
+    }
+    if (['cancelled'].includes(status)) {
+      return 'bg-[#ffdad6] text-[#ba1a1a] border-[#ffdad6]';
+    }
+    return 'bg-[#dae2fd] text-[#1d3354] border-[#dae2fd]';
+  };
+
+  const formatStatusText = (status) => {
+    const map = {
+      pending: "Processing",
+      confirmed: "Confirmed",
+      preparing: "Preparing",
+      rider_assigned: "Rider Assigned",
+      on_the_way: "On the way",
+      delivered: "Delivered",
+      cancelled: "Cancelled"
+    };
+    return map[status] || status;
+  };
+
   return (
-    <div className="bg-slate-50 font-body text-slate-900 min-h-screen pb-32">
-      {/* Fixed Header */}
-      <header className="bg-white/90 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-slate-100">
-        <div className="px-6 py-6 text-center">
-          <h1 className="text-xl font-black font-headline tracking-tight uppercase">My Orders</h1>
-        </div>
+    <div className="bg-[#f7f9fb] font-sans text-[#191c1e] min-h-screen antialiased flex flex-col items-center">
+      <div className="w-full max-w-xl min-h-screen flex flex-col bg-[#f7f9fb] relative">
 
-        {/* Segmented Control / Tabs */}
-        <div className="px-6 pb-4">
-          <div className="bg-slate-100 p-1.5 rounded-2xl flex relative">
+        {/* Fixed Header */}
+        <header className="fixed top-0 w-full max-w-xl z-50 bg-white/90 backdrop-blur-xl border-b border-[#e0e3e5]/60 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+          <div className="h-16 px-4 flex items-center justify-between">
             <button 
-              onClick={() => setActiveTab('Active')}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 z-10 ${activeTab === 'Active' ? 'text-slate-900' : 'text-slate-400'}`}
+              onClick={() => navigate(-1)} 
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-[#f2f4f6] hover:bg-[#eceef0] text-[#191c1e] transition-colors" 
+              type="button"
             >
-              Active
+              <span className="material-symbols-outlined text-[20px]">arrow_back</span>
             </button>
+            
+            <h1 className="font-bold text-sm text-[#191c1e] uppercase tracking-wider">My Orders & History</h1>
+            
             <button 
-              onClick={() => setActiveTab('History')}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 z-10 ${activeTab === 'History' ? 'text-slate-900' : 'text-slate-400'}`}
+              onClick={() => navigate('/support')}
+              className="w-10 h-10 rounded-full flex items-center justify-center bg-[#f2f4f6] hover:bg-[#eceef0] text-[#191c1e] transition-colors"
+              type="button"
+              title="Support"
             >
-              History
+              <span className="material-symbols-outlined text-[20px]">support_agent</span>
             </button>
-            {/* Sliding Indicator */}
-            <div className={`absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] bg-white rounded-xl shadow-sm transition-transform duration-300 ease-out ${activeTab === 'History' ? 'translate-x-full' : 'translate-x-0'}`}></div>
           </div>
-        </div>
-      </header>
 
-      <main className="pt-44 px-6">
-        <div className="flex flex-col gap-6">
+          {/* Segmented Control / Tabs */}
+          <div className="px-4 pb-4">
+            <div className="bg-[#f2f4f6] p-1.5 rounded-2xl flex relative border border-[#e0e3e5]/50">
+              <button 
+                onClick={() => setActiveTab('Active')}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 z-10 ${activeTab === 'Active' ? 'text-[#191c1e]' : 'text-[#565e74]'}`}
+              >
+                Active
+              </button>
+              <button 
+                onClick={() => setActiveTab('History')}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 z-10 ${activeTab === 'History' ? 'text-[#191c1e]' : 'text-[#565e74]'}`}
+              >
+                History
+              </button>
+              {/* Sliding Indicator */}
+              <div className={`absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] bg-white rounded-xl shadow-sm transition-transform duration-300 ease-out border border-[#e0e3e5]/40 ${activeTab === 'History' ? 'translate-x-full' : 'translate-x-0'}`}></div>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content Area */}
+        <main className="w-full pt-36 pb-32 px-4 flex-1 space-y-4">
           {ordersQuery.isLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin w-8 h-8 border-4 border-slate-200 border-t-rose-600 rounded-full"></div>
+            <div className="flex flex-col items-center justify-center py-20 space-y-3">
+              <div className="w-10 h-10 border-4 border-[#e0e3e5] border-t-[#b80035] rounded-full animate-spin"></div>
+              <p className="text-xs font-bold text-[#565e74] uppercase tracking-wider">Syncing orders...</p>
             </div>
           ) : filteredOrders.length > 0 ? (
-            filteredOrders.map((order) => (
-              <div key={order.id} className="bg-white rounded-[2.5rem] p-5 shadow-sm border border-slate-100 active:scale-[0.98] transition-transform group">
-                {/* Order Top Info */}
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-inner bg-slate-200">
-                      {order.vendor?.logo_url && (
-                        <img src={order.vendor.logo_url} alt={order.vendor.name} className="w-full h-full object-cover" />
-                      )}
+            filteredOrders.map((order) => {
+              const isActiveOrder = ['pending', 'confirmed', 'preparing', 'rider_assigned', 'on_the_way'].includes(order.status);
+              
+              return (
+                <div 
+                  key={order.id} 
+                  className="bg-white rounded-2xl p-4 shadow-sm border border-[#e0e3e5]/60 hover:shadow-md transition-shadow flex flex-col gap-4"
+                >
+                  {/* Order Top Header */}
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-[#f2f4f6] border border-[#e0e3e5] flex-shrink-0 flex items-center justify-center">
+                        {order.vendor?.logo_url ? (
+                          <img src={order.vendor.logo_url} alt={order.vendor.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="material-symbols-outlined text-[#565e74]">storefront</span>
+                        )}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <h3 className="font-bold text-sm text-[#191c1e] truncate">{order.vendor?.name || 'Store Merchant'}</h3>
+                        <p className="text-[10px] text-[#565e74] font-medium mt-0.5">
+                          {new Date(order.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-black text-sm text-slate-900">{order.vendor?.name || 'Vendor'}</h3>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5 tracking-tight">
-                        {new Date(order.created_at).toLocaleString()}
-                      </p>
-                    </div>
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusBadgeStyle(order.status)}`}>
+                      {formatStatusText(order.status)}
+                    </span>
                   </div>
-                  <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider border ${
-                    ['pending', 'confirmed', 'preparing', 'rider_assigned', 'on_the_way'].includes(order.status)
-                    ? 'bg-amber-50 text-amber-600 border-amber-100' 
-                    : 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                  }`}>
-                    {order.status}
-                  </span>
-                </div>
 
-                {/* Items Summary */}
-                <div className="bg-slate-50 rounded-2xl p-4 mb-5 border border-slate-50">
-                   <div className="flex justify-between items-center mb-1">
-                      <p className="text-xs font-bold text-slate-600">
-                        {order.items?.map(item => item.product_name).join(' • ') || 'Order items'}
+                  {/* Items Summary Container */}
+                  <div className="bg-[#f7f9fb] rounded-xl p-3.5 border border-[#e0e3e5]/40 flex flex-col gap-1">
+                    <div className="flex justify-between items-baseline gap-2">
+                      <p className="text-xs font-bold text-[#191c1e] line-clamp-1">
+                        {order.items?.map(item => item.product_name).join(' • ') || 'Order items summary'}
                       </p>
-                      <span className="font-black text-slate-900 text-sm">{formatMoney(order.total_amount || 0)}</span>
-                   </div>
-                   <p className="text-[10px] text-slate-400 font-medium">Order ID: {order.order_reference}</p>
-                </div>
+                      <span className="font-extrabold text-sm text-[#191c1e] flex-shrink-0">{formatMoney(order.total_amount || 0)}</span>
+                    </div>
+                    <p className="text-[10px] font-mono text-[#565e74]">Ref: #{order.order_reference || order.id}</p>
+                  </div>
 
-                {/* Conditional Actions */}
-                <div className="flex gap-3">
-                  {['pending', 'confirmed', 'preparing', 'rider_assigned', 'on_the_way'].includes(order.status) ? (
+                  {/* Action Buttons Bar */}
+                  <div className="flex items-center gap-2 pt-1">
+                    {isActiveOrder ? (
+                      <button 
+                        onClick={() => navigate(`/tracking/${order.id}`)}
+                        className="flex-1 h-11 rounded-xl bg-[#e11d48] hover:bg-[#b80035] text-white flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest shadow-sm transition-all active:scale-[0.98]"
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined text-lg">local_shipping</span>
+                        Track Order
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => navigate(`/market`)}
+                        className="flex-1 h-11 rounded-xl border border-[#e0e3e5] hover:bg-[#f2f4f6] text-[#191c1e] flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-all active:scale-[0.98]"
+                        type="button"
+                      >
+                        <span className="material-symbols-outlined text-lg">refresh</span>
+                        Re-order
+                      </button>
+                    )}
                     <button 
-                      onClick={() => navigate(`/tracking/${order.id}`)}
-                      style={signatureGradient}
-                      className="flex-grow h-12 rounded-xl flex items-center justify-center gap-2 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-rose-200 active:scale-95 transition-transform"
+                      onClick={() => navigate(`/support?order=${order.id}`)}
+                      className="w-11 h-11 rounded-xl bg-[#f2f4f6] hover:bg-[#eceef0] text-[#191c1e] flex items-center justify-center transition-colors shadow-sm flex-shrink-0"
+                      type="button"
+                      title="Order Chat / Support"
                     >
-                      <span className="material-symbols-outlined text-lg">local_shipping</span>
-                      Track Order
+                      <span className="material-symbols-outlined text-[20px]">chat</span>
                     </button>
-                  ) : (
-                    <button 
-                      className="flex-grow h-12 rounded-xl border-2 border-slate-100 text-slate-900 text-xs font-black uppercase tracking-widest hover:bg-slate-50 active:scale-95 transition-transform"
-                    >
-                      Re-order
-                    </button>
-                  )}
-                  <button className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center active:scale-95 transition-transform">
-                    <span className="material-symbols-outlined">chat_bubble</span>
-                  </button>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
-            <div className="flex flex-col items-center justify-center pt-20">
-              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-300">
-                <span className="material-symbols-outlined text-4xl">receipt_long</span>
+            <div className="flex flex-col items-center justify-center pt-24 text-center px-6">
+              <div className="w-16 h-16 bg-[#f2f4f6] rounded-full flex items-center justify-center mb-4 text-[#565e74] border border-[#e0e3e5]">
+                <span className="material-symbols-outlined text-3xl">receipt_long</span>
               </div>
-              <h3 className="font-black text-slate-900">No Orders Yet</h3>
-              <p className="text-sm text-slate-400 font-medium text-center px-10">Hungry? Your next favorite meal is just a few taps away.</p>
-              <Link to="/market" style={signatureGradient} className="mt-6 px-8 py-3 rounded-2xl text-white text-xs font-black uppercase tracking-widest shadow-xl active:scale-95 transition-transform">
+              <h3 className="font-bold text-base text-[#191c1e] mb-1">No Orders Found</h3>
+              <p className="text-xs text-[#565e74] max-w-xs mb-6 leading-relaxed">
+                You do not have any orders in this view yet. Explore the marketplace to place a new order.
+              </p>
+              <Link 
+                to="/market" 
+                className="px-6 py-3 rounded-2xl bg-[#e11d48] hover:bg-[#b80035] text-white text-xs font-bold uppercase tracking-widest shadow-sm transition-all active:scale-95"
+              >
                 Browse Marketplace
               </Link>
             </div>
           )}
-        </div>
-      </main>
+        </main>
 
-      {/* Persistent Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-8 pt-4 bg-white/95 backdrop-blur-2xl border-t border-slate-100 rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.04)]">
-        <Link to="/dashboard" className="flex flex-col items-center text-slate-400 group flex-1">
-          <span className="material-symbols-outlined text-2xl group-hover:text-rose-600 transition-colors">home</span>
-          <span className="text-[10px] font-black uppercase mt-1">Home</span>
-        </Link>
-        <Link to="/market" className="flex flex-col items-center text-slate-400 group flex-1">
-          <span className="material-symbols-outlined text-2xl group-hover:text-rose-600 transition-colors">storefront</span>
-          <span className="text-[10px] font-black uppercase mt-1">Market</span>
-        </Link>
-        <button onClick={() => navigate('/ride')} className="flex flex-col items-center text-slate-400 group flex-1 hover:text-rose-600 transition-colors">
-          <span className="material-symbols-outlined text-2xl">two_wheeler</span>
-          <span className="text-[10px] font-black uppercase mt-1">Ride</span>
-        </button>
-        <Link to="/orders" className="flex flex-col items-center text-rose-600 flex-1">
-          <span className="material-symbols-outlined text-2xl" style={materialIconFill}>receipt_long</span>
-          <span className="text-[10px] font-black uppercase mt-1">Orders</span>
-        </Link>
-        <Link to="/profile" className="flex flex-col items-center text-slate-400 group flex-1">
-          <span className="material-symbols-outlined text-2xl group-hover:text-rose-600 transition-colors">person</span>
-          <span className="text-[10px] font-black uppercase mt-1">Profile</span>
-        </Link>
-      </nav>
+        {/* Global Floating Bottom Navigation Bar */}
+     
+
+      </div>
     </div>
   );
 };

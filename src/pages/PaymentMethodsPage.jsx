@@ -1,14 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export const PaymentMethodsPage = () => {
   const navigate = useNavigate();
   const materialIconFill = { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" };
 
-  const [paymentMethods] = useState([
-    { id: 1, type: 'Visa', last4: '4242', expiry: '12/25', isDefault: true },
-    { id: 2, type: 'Mastercard', last4: '5555', expiry: '08/24', isDefault: false },
-  ]);
+  const paymentMethods = [];
 
   return (
     <div className="bg-[#f5f6f7] font-body text-slate-900 min-h-screen pb-24 antialiased">

@@ -10,14 +10,13 @@ import {
   fetchRiderOrderRequests,
   fetchRiderOrders,
   fetchRiderProfile,
+  fetchRiderRoute,
   fetchRiderTracking,
   rejectRiderOrder,
   updateRiderLocation,
   updateRiderOrder,
 } from "../api/rider";
 import { formatMoney } from "../lib/utils";
-
-const ROUTING_URL = "https://router.project-osrm.org/route/v1/driving/";
 
 const statusActions = [
   { id: "on_the_way", label: "On Way", note: "Rider is heading to the customer." },
@@ -44,7 +43,6 @@ export const RiderNavigatePage = () => {
   const destinationMarkerRef = useRef(null);
   const watchIdRef = useRef(null);
   const lastSentRef = useRef(0);
-  const routeTimeoutRef = useRef(null);
 
   // React Query Hook Subscriptions
   const ordersQuery = useQuery({
@@ -191,21 +189,22 @@ export const RiderNavigatePage = () => {
   };
 
   const fetchRoute = async (start, end) => {
-    if (!start || !end || !mapInstanceRef.current) return;
+    if (!start || !end || !mapInstanceRef.current || !activeOrder?.id) return;
     setIsRouteLoading(true);
 
     try {
-      const url = `${ROUTING_URL}${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson`;
-      const response = await fetch(url);
-      const data = await response.json();
-      
-      if (data.code === "Ok" && data.routes?.[0]) {
-        const route = data.routes[0];
-        setRouteDistance(route.distance);
-        setRouteDuration(route.duration);
+      const route = await fetchRiderRoute({
+        orderId: activeOrder.id,
+        start_latitude: start.lat,
+        start_longitude: start.lng,
+      });
+
+      if (route?.coordinates?.length) {
+        setRouteDistance(route.distance_meters);
+        setRouteDuration(route.duration_seconds);
         
-        if (route.geometry?.coordinates) {
-          const leafletCoordinates = route.geometry.coordinates.map(coord => [
+        if (route.coordinates) {
+          const leafletCoordinates = route.coordinates.map(coord => [
             Number(coord[1]), 
             Number(coord[0])  
           ]);
@@ -221,14 +220,11 @@ export const RiderNavigatePage = () => {
             lineJoin: "round",
             lineCap: "round"
           }).addTo(mapInstanceRef.current);
-        } else {
-          drawStraightLine(start, end);
         }
-      } else {
-        drawStraightLine(start, end);
       }
     } catch {
-      drawStraightLine(start, end);
+      setRouteDistance(null);
+      setRouteDuration(null);
     } finally {
       setIsRouteLoading(false);
     }
@@ -238,13 +234,14 @@ export const RiderNavigatePage = () => {
   useEffect(() => {
     if (!mapRef.current || mapInstanceRef.current) return;
 
-    const initialView = riderLocation || { lat: 6.5244, lng: 3.3792 };
+    const initialView = riderLocation || destination;
+    if (!initialView) return;
     mapInstanceRef.current = L.map(mapRef.current, { zoomControl: false }).setView([initialView.lat, initialView.lng], 14);
     
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
       maxZoom: 19,
     }).addTo(mapInstanceRef.current);
-  }, []);
+  }, [destination, riderLocation]);
 
   // Sync Map Pin Overlay Components
   useEffect(() => {
@@ -281,14 +278,11 @@ export const RiderNavigatePage = () => {
     }
 
     if (riderLocation && destination) {
-      if (routeTimeoutRef.current) clearTimeout(routeTimeoutRef.current);
-      routeTimeoutRef.current = setTimeout(() => {
-        fetchRoute(riderLocation, destination);
-        const bounds = L.latLngBounds([[riderLocation.lat, riderLocation.lng], [destination.lat, destination.lng]]);
-        mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
-      }, 400);
+      fetchRoute(riderLocation, destination);
+      const bounds = L.latLngBounds([[riderLocation.lat, riderLocation.lng], [destination.lat, destination.lng]]);
+      mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [riderLocation, destination]);
+  }, [activeOrder?.id, riderLocation, destination]);
 
   return (
     <div className="w-full h-screen flex flex-col bg-slate-100 overflow-hidden antialiased select-none font-body">

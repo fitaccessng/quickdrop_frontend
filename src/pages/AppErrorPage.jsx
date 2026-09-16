@@ -1,11 +1,16 @@
 import React from "react";
 import { Link, useRouteError } from "react-router-dom";
+import { getApiErrorMessage } from "../lib/errorMessage";
 
 export const AppErrorPage = () => {
   const error = useRouteError();
   const status = error?.status || 500;
   const title = status === 404 ? "Page not found" : "Something went wrong";
-  const detail = error?.statusText || error?.message || "The page could not be loaded.";
+  const detail = typeof error?.statusText === "string"
+    ? error.statusText
+    : typeof error?.message === "string"
+      ? error.message
+      : getApiErrorMessage(error, "The page could not be loaded.");
 
   return (
     <div className="min-h-screen bg-[#f5f6f7] flex items-center justify-center px-6">

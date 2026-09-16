@@ -103,7 +103,7 @@ export const RiderOrderRequestsPage = () => {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => navigate("/profile/notifications")}
+            onClick={() => navigate("/rider/notifications")}
             className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 text-[#5a5c58] active:scale-95 transition-transform"
           >
             <span className="material-symbols-outlined text-xl">notifications</span>

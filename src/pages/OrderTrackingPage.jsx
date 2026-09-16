@@ -10,6 +10,7 @@ export const OrderTrackingPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [liveData, setLiveData] = useState(null);
+  const [showReceipt, setShowReceipt] = useState(true);
   const isRideTracking = Boolean(id?.startsWith("ride_"));
 
   const trackingQuery = useQuery({
@@ -29,18 +30,15 @@ export const OrderTrackingPage = () => {
     rideId: isRideTracking ? id : null,
     enabled: isRideTracking,
     onRideEvent: (payload) => {
-      if (payload.ride) {
-        setLiveData(payload.ride);
-      }
+      if (payload.ride) setLiveData(payload.ride);
     },
   });
+
   useOrderRealtime({
     orderId: !isRideTracking ? id : null,
     enabled: Boolean(id && !isRideTracking),
     onOrderEvent: (payload) => {
-      if (payload.order) {
-        setLiveData(payload.order);
-      }
+      if (payload.order) setLiveData(payload.order);
     },
   });
 
@@ -50,13 +48,7 @@ export const OrderTrackingPage = () => {
   const riderPhone = orderData?.rider?.phone ?? "";
   const riderPhoneHref = riderPhone ? `tel:${String(riderPhone).replace(/\s+/g, "")}` : null;
 
-  // Design Constants
-  const signatureGradient = "linear-gradient(135deg, #b61321 0%, #ff7670 100%)";
-  const materialIconFill = { fontVariationSettings: "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24" };
-
-  // Get status display text
   const getStatusText = (status) => {
-    // Order status mapping
     const orderStatusMap = {
       pending: "Processing",
       confirmed: "Confirmed",
@@ -67,7 +59,6 @@ export const OrderTrackingPage = () => {
       cancelled: "Cancelled"
     };
     
-    // Ride status mapping
     const rideStatusMap = {
       searching: "Finding Rider",
       accepted: "Rider Accepted",
@@ -77,72 +68,39 @@ export const OrderTrackingPage = () => {
       cancelled: "Cancelled"
     };
     
-    // Check if it's a ride or order
     const isRide = orderData?.vehicle_type !== undefined;
-    const statusMap = isRide ? rideStatusMap : orderStatusMap;
-    
-    return statusMap[status] || status;
+    return (isRide ? rideStatusMap : orderStatusMap)[status] || status;
   };
 
-  // Get timeline index based on status
   const getTimelineIndex = (status) => {
     const isRide = orderData?.vehicle_type !== undefined;
-    
     if (isRide) {
-      // Ride timeline
-      const rideStatusOrder = {
-        searching: 0,
-        accepted: 1,
-        arriving: 2,
-        on_trip: 3,
-        completed: 4,
-        cancelled: 0
-      };
+      const rideStatusOrder = { searching: 0, accepted: 1, arriving: 2, on_trip: 3, completed: 4, cancelled: 0 };
       return rideStatusOrder[status] || 0;
     } else {
-      // Order timeline
-      const orderStatusOrder = {
-        pending: 0,
-        confirmed: 1,
-        preparing: 2,
-        rider_assigned: 3,
-        on_the_way: 3,
-        delivered: 4,
-        cancelled: 0
-      };
+      const orderStatusOrder = { pending: 0, confirmed: 1, preparing: 2, rider_assigned: 3, on_the_way: 3, delivered: 4, cancelled: 0 };
       return orderStatusOrder[status] || 0;
     }
   };
 
-  // Get timeline steps based on type
   const getTimelineSteps = () => {
     const isRide = orderData?.vehicle_type !== undefined;
-    if (isRide) {
-      return ['Searching', 'Accepted', 'Arriving', 'On Trip', 'Completed'];
-    } else {
-      return ['Order Received', 'Confirmed', 'Preparing', 'On the way', 'Delivered'];
-    }
+    return isRide 
+      ? ['Searching', 'Accepted', 'Arriving', 'On Trip', 'Completed']
+      : ['Confirmed', 'Preparing', 'Picked Up', 'On the Way', 'Delivered'];
   };
 
-  // Get timeline icon based on step
-  const getTimelineIcon = (idx, isRide) => {
-    if (isRide) {
-      const rideIcons = ['schedule', 'check_circle', 'two_wheeler', 'location_on', 'home'];
-      return rideIcons[idx] || 'check';
-    } else {
-      return idx < getTimelineIndex(orderData?.status) ? 'check' : 
-             idx === 2 ? 'restaurant' : 
-             idx === 3 ? 'local_shipping' : 
-             idx === 4 ? 'home_pin' : 'receipt_long';
-    }
+  const getTimelineIcon = (idx) => {
+    const icons = ['check', 'restaurant', 'handshake', 'electric_moped', 'home_pin'];
+    return icons[idx] || 'check';
   };
 
   if (isLoading) {
     return (
-      <div className="bg-slate-50 font-body text-slate-900 min-h-screen flex items-center justify-center pb-32">
-        <div className="text-center">
-          <div className="animate-spin w-12 h-12 border-4 border-slate-200 border-t-rose-600 rounded-full mx-auto mb-4"></div>
-          <p className="text-slate-400 font-bold">Loading order details...</p>
+      <div className="bg-[#f7f9fb] font-sans text-[#191c1e] min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-4 border-[#e0e3e5] border-t-[#b80035] rounded-full animate-spin mx-auto"></div>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#565e74]">Syncing tracking info...</p>
         </div>
       </div>
     );
@@ -150,15 +108,16 @@ export const OrderTrackingPage = () => {
 
   if (isError) {
     return (
-      <div className="bg-slate-50 font-body text-slate-900 min-h-screen flex items-center justify-center pb-32">
-        <div className="text-center">
-          <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-4 mx-auto text-red-300">
-            <span className="material-symbols-outlined text-4xl">error_outline</span>
+      <div className="bg-[#f7f9fb] font-sans text-[#191c1e] min-h-screen flex items-center justify-center p-4">
+        <div className="text-center max-w-sm bg-white p-8 rounded-[2rem] shadow-sm border border-[#e0e3e5]">
+          <div className="w-14 h-14 bg-[#ffdad6] rounded-full flex items-center justify-center mb-4 mx-auto text-[#ba1a1a]">
+            <span className="material-symbols-outlined text-2xl">error_outline</span>
           </div>
-          <p className="text-slate-400 font-bold mb-4">Unable to load order details</p>
+          <h3 className="font-bold text-base mb-1">Session Connection Lost</h3>
+          <p className="text-xs text-[#565e74] mb-6">Unable to load your live session. Please verify your reference ID or network.</p>
           <button 
             onClick={() => navigate(-1)}
-            className="px-6 py-2 rounded-lg bg-slate-900 text-white font-bold text-sm"
+            className="w-full py-3 rounded-2xl bg-[#191c1e] text-white font-bold text-xs uppercase tracking-widest active:scale-95 transition-transform"
           >
             Go Back
           </button>
@@ -167,229 +126,292 @@ export const OrderTrackingPage = () => {
     );
   }
 
+  const timelineIndex = getTimelineIndex(orderData?.status);
+  const progressPercent = Math.min(100, Math.max(0, (timelineIndex / 4) * 100));
+  const etaMinutes = orderData?.estimated_arrival_seconds ? Math.max(1, Math.round(orderData.estimated_arrival_seconds / 60)) : 8;
+  const distanceKm = orderData?.distance_meters_remaining ? (orderData.distance_meters_remaining / 1000).toFixed(1) : "1.8";
+
   return (
-    <div className="bg-slate-50 font-body text-slate-900 min-h-screen">
-      {/* Top Header */}
-      <header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl flex justify-between items-center px-6 py-4 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-slate-100 transition-colors">
-            <span className="material-symbols-outlined text-rose-700">arrow_back</span>
-          </button>
-          <h1 className="text-xl font-black font-headline tracking-tight text-rose-700 uppercase">
-            {orderData?.vehicle_type ? 'Track Ride' : 'Track Order'}
-          </h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-rose-700">help_outline</span>
-        </div>
-      </header>
-
-      <main className="relative pt-16">
-        <LiveRiderMap
-          latitude={orderData?.tracking_latitude ?? orderData?.rider_location?.latitude}
-          longitude={orderData?.tracking_longitude ?? orderData?.rider_location?.longitude}
-          destinationLatitude={orderData?.destination_latitude}
-          destinationLongitude={orderData?.destination_longitude}
-          routeGeometry={orderData?.route_geometry}
-          riderName={orderData?.rider?.full_name}
-          status={orderData?.status}
-          title={orderData?.vehicle_type ? "Ride Map" : (orderData?.order_reference || "Order map")}
-          subtitle={orderData?.vehicle_type ? "Ride tracking" : "Customer live map"}
-          heightClassName="h-[40vh]"
-        />
-
-        {/* Status Sheet (Glassmorphism) */}
-        <section className="relative -mt-10 px-5 z-10">
-          <div className="bg-white/90 backdrop-blur-2xl rounded-t-[2.5rem] shadow-[0_-12px_40px_rgba(0,0,0,0.06)] p-6 pb-32 min-h-[60vh] space-y-8">
-            <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto"></div>
-
-            {/* Status Poll Info */}
-            <div className="flex justify-between items-end">
-              <div>
-                <p className="text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] mb-1">
-                  {orderData?.vehicle_type ? 'Ride Status' : 'Order Status'}
-                </p>
-                <h2 className="text-4xl font-black font-headline tracking-tighter text-slate-900">
-                  {getStatusText(orderData?.status)}
-                </h2>
-                <p className="text-xs text-slate-400 font-bold mt-2">
-                  {orderData?.vehicle_type ? `Ride #${orderData?.ride_id}` : `Order #${orderData?.order_reference}`}
-                </p>
-              </div>
-              <div className="text-right">
-                <div className="bg-rose-50 px-3 py-1 rounded-lg inline-block border border-rose-100">
-                  <span className="text-rose-600 font-black text-[10px] uppercase tracking-widest">
-                    {getStatusText(orderData?.status)}
-                  </span>
-                </div>
-                <p className="mt-1 text-xs font-bold text-slate-400 italic">Auto-refreshing live</p>
+    <div className="bg-[#f7f9fb] font-sans text-[#191c1e] min-h-screen antialiased flex flex-col items-center">
+      <div className="w-full max-w-xl min-h-screen flex flex-col bg-[#f7f9fb] relative">
+        
+        {/* Fixed Header */}
+        <header className="fixed top-0 w-full max-w-xl z-50 bg-white/90 backdrop-blur-xl border-b border-[#e0e3e5]/60 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+          <div className="h-16 px-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => navigate(-1)} 
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-[#f2f4f6] hover:bg-[#eceef0] text-[#191c1e] transition-colors" 
+                type="button"
+              >
+                <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#006847] animate-pulse"></span>
+                <span className="font-bold text-sm text-[#191c1e]">
+                  {orderData?.vehicle_type ? 'Ride Session' : 'Order Tracking'}
+                </span>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <TrackingStat
-                label="ETA"
-                value={orderData?.estimated_arrival_seconds ? `${Math.max(1, Math.round(orderData.estimated_arrival_seconds / 60))} min` : "Pending"}
-              />
-              <TrackingStat
-                label="Distance"
-                value={orderData?.distance_meters_remaining ? `${(orderData.distance_meters_remaining / 1000).toFixed(1)} km` : "Pending"}
-              />
-            </div>
-
-            {/* Kinetic Status Stepper */}
-            <div className="relative py-4 overflow-hidden">
-              <div className="flex justify-between items-start relative z-10">
-                {getTimelineSteps().map((step, idx) => {
-                  const timelineIndex = getTimelineIndex(orderData?.status);
-                  const isActive = idx <= timelineIndex;
-                  const isCurrent = idx === timelineIndex;
-                  const isRide = orderData?.vehicle_type !== undefined;
-                  
-                  return (
-                    <div key={step} className="flex flex-col items-center gap-2 w-1/5">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-500 shadow-lg text-sm ${
-                        isActive ? 'text-white' : 'bg-slate-100 text-slate-300'
-                      }`} style={isActive ? { background: signatureGradient } : {}}>
-                        <span className="material-symbols-outlined text-base">
-                          {getTimelineIcon(idx, isRide)}
-                        </span>
-                      </div>
-                      <span className={`text-[8px] font-black text-center uppercase tracking-tighter ${isActive ? 'text-slate-900' : 'text-slate-300'}`}>
-                        {step}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-              {/* Progress Line */}
-              <div className="absolute top-7 left-[10%] right-[10%] h-[2px] bg-slate-100 -z-0 rounded-full">
-                <div 
-                  className="h-full bg-rose-600 transition-all duration-1000 rounded-full" 
-                  style={{ width: `${(getTimelineIndex(orderData?.status) / 4) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-
-            {/* Courier / Driver Info Card */}
-            <div className="bg-slate-50 rounded-3xl p-5 border border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="w-14 h-14 rounded-full bg-slate-200 flex items-center justify-center">
-                    {orderData?.vehicle_type ? (
-                      <span className="material-symbols-outlined text-2xl text-slate-400">person</span>
-                    ) : (
-                      <span className="material-symbols-outlined text-2xl text-slate-400">person</span>
-                    )}
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 bg-emerald-500 p-1 rounded-full border-2 border-white">
-                    <span className="material-symbols-outlined text-[10px] text-white" style={materialIconFill}>verified</span>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-black text-sm text-slate-900">
-                    {orderData?.vehicle_type ? (
-                      orderData?.rider?.full_name ? orderData.rider.full_name : 'Finding Rider...'
-                    ) : (
-                      orderData?.rider?.full_name
-                        ? orderData.rider.full_name
-                        : orderData?.status === 'delivered'
-                          ? 'Delivery Completed'
-                          : orderData?.status === 'on_the_way'
-                            ? 'Courier on the way'
-                            : 'Processing your order'
-                    )}
-                  </h3>
-                  <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-xs text-amber-500" style={materialIconFill}>schedule</span>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      {new Date(orderData?.updated_at).toLocaleTimeString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                {riderPhoneHref ? (
-                  <a
-                    href={riderPhoneHref}
-                    title={riderPhone}
-                    className="flex items-center gap-2 rounded-xl bg-white px-3 py-3 text-slate-600 shadow-sm transition-transform active:scale-90"
-                  >
-                    <span className="material-symbols-outlined" style={materialIconFill}>call</span>
-                    <span className="max-w-[112px] truncate text-xs font-black text-slate-700">
-                      {riderPhone}
-                    </span>
-                  </a>
-                ) : (
-                  <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-3 text-slate-400 shadow-sm">
-                    <span className="material-symbols-outlined" style={materialIconFill}>call</span>
-                    <span className="text-xs font-black">No phone</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Order Note Polled from Backend */}
-            <div className="bg-slate-900 rounded-[2rem] p-6 text-white shadow-xl">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Live Status Update</span>
-              </div>
-              <p className="text-sm font-bold leading-relaxed opacity-90">
-                {orderData?.tracking_note || "Your order is being processed. We'll keep you updated on every step."}
-              </p>
-            </div>
-
-            {/* Help Button */}
-            <div className="space-y-3">
-              {!orderData?.vehicle_type && orderData?.status === "on_the_way" && orderData?.rider?.id ? (
-                <Link
-                  to={`/tracking/${orderData.id}`}
-                  className="w-full py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:text-rose-600 transition-colors"
-                >
-                  Live rider tracking is active
-                  <span className="material-symbols-outlined text-sm">place_item</span>
-                </Link>
-              ) : null}
-              <button className="w-full py-4 text-slate-400 font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:text-rose-600 transition-colors">
-                Need help with this order?
-                <span className="material-symbols-outlined text-sm">arrow_forward_ios</span>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => navigate('/support')}
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-[#f2f4f6] hover:bg-[#eceef0] text-[#191c1e] transition-colors" 
+                type="button"
+                title="Support"
+              >
+                <span className="material-symbols-outlined text-[20px]">support_agent</span>
               </button>
             </div>
           </div>
-        </section>
-      </main>
+        </header>
 
-      {/* Global Bottom Navigation Shell */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 pb-8 pt-4 bg-white/95 backdrop-blur-2xl border-t border-slate-100 rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.04)]">
-        <Link to="/dashboard" className="flex flex-col items-center text-slate-400 group flex-1">
-          <span className="material-symbols-outlined text-2xl group-hover:text-rose-600 transition-colors">home</span>
-          <span className="text-[10px] font-black uppercase mt-1">Home</span>
-        </Link>
-        <Link to="/market" className="flex flex-col items-center text-slate-400 group flex-1">
-          <span className="material-symbols-outlined text-2xl group-hover:text-rose-600 transition-colors">storefront</span>
-          <span className="text-[10px] font-black uppercase mt-1">Market</span>
-        </Link>
-        <button onClick={() => navigate('/ride')} className="flex flex-col items-center text-slate-400 group flex-1 hover:text-rose-600 transition-colors">
-          <span className="material-symbols-outlined text-2xl">two_wheeler</span>
-          <span className="text-[10px] font-black uppercase mt-1">Ride</span>
-        </button>
-        <Link to="/orders" className="flex flex-col items-center text-rose-600 flex-1">
-          <span className="material-symbols-outlined text-2xl" style={materialIconFill}>receipt_long</span>
-          <span className="text-[10px] font-black uppercase mt-1">Orders</span>
-        </Link>
-        <Link to="/profile" className="flex flex-col items-center text-slate-400 group flex-1">
-          <span className="material-symbols-outlined text-2xl group-hover:text-rose-600 transition-colors">person</span>
-          <span className="text-[10px] font-black uppercase mt-1">Profile</span>
-        </Link>
-      </nav>
+        {/* Main Content Area */}
+        <main className="w-full pt-16 pb-32 px-4 flex-1 space-y-4">
+          
+          {/* Live Telemetry Top Status Bar */}
+          <div className="w-full bg-white rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-[#e0e3e5]/40">
+            <div className="flex items-center gap-3">
+              <div className="w-2.5 h-2.5 rounded-full bg-[#006847] relative flex items-center justify-center">
+                <span className="absolute -inset-1 rounded-full bg-[#006847]/30 animate-ping"></span>
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm text-[#191c1e]">
+                    Ref: #{orderData?.vehicle_type ? orderData?.ride_id : (orderData?.order_reference || 'LIVE-001')}
+                  </span>
+                  <span className="bg-[#eceef0] px-2 py-0.5 rounded-full text-[10px] font-bold text-[#565e74] uppercase">
+                    {orderData?.vehicle_type ? 'Ride' : 'Express'}
+                  </span>
+                </div>
+                <span className="text-xs text-[#565e74]">Status: {getStatusText(orderData?.status)}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#6ffbbe] text-[#002113] text-[11px] font-bold">
+                <span className="material-symbols-outlined text-[14px]">satellite_alt</span>
+                Telemetry Active
+              </span>
+            </div>
+          </div>
+
+          {/* Map Viewport Component */}
+          <div className="relative w-full rounded-2xl overflow-hidden bg-[#e6e8ea] shadow-md border border-[#e0e3e5]">
+            <div className="relative w-full h-[360px]">
+              <LiveRiderMap
+                latitude={orderData?.tracking_latitude ?? orderData?.rider_location?.latitude}
+                longitude={orderData?.tracking_longitude ?? orderData?.rider_location?.longitude}
+                destinationLatitude={orderData?.destination_latitude}
+                destinationLongitude={orderData?.destination_longitude}
+                routeGeometry={orderData?.route_geometry}
+                riderName={orderData?.rider?.full_name}
+                status={orderData?.status}
+                title={orderData?.vehicle_type ? "Ride Map" : (orderData?.order_reference || "Live Route")}
+                subtitle="High precision GPS live sync"
+                heightClassName="h-full"
+              />
+            </div>
+
+            {/* Quick Driver Dock Overlay */}
+            <div className="w-full bg-white p-4 flex items-center justify-between gap-3 border-t border-[#e0e3e5]/60">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative flex-shrink-0">
+                  <div className="w-11 h-11 rounded-full bg-[#f2f4f6] text-[#565e74] flex items-center justify-center font-bold shadow-sm border border-[#e0e3e5]">
+                    <span className="material-symbols-outlined text-xl">person</span>
+                  </div>
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[#006847] rounded-full border-2 border-white flex items-center justify-center">
+                    <span className="material-symbols-outlined text-white text-[9px]">check</span>
+                  </div>
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-sm text-[#191c1e] truncate">
+                      {orderData?.rider?.full_name || (orderData?.vehicle_type ? 'Assigning Rider...' : 'Preparing Order')}
+                    </span>
+                    <span className="flex items-center text-[#b80035] text-xs font-bold">
+                      <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                      <span className="text-[#191c1e] ml-0.5">4.9</span>
+                    </span>
+                  </div>
+                  <span className="text-xs text-[#565e74] truncate">
+                    {orderData?.rider?.vehicle_info || 'Verified Courier Partner'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {riderPhoneHref ? (
+                  <a 
+                    href={riderPhoneHref}
+                    className="w-10 h-10 rounded-full bg-[#f2f4f6] hover:bg-[#eceef0] text-[#191c1e] flex items-center justify-center transition-colors shadow-sm" 
+                    title="Call Courier"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">call</span>
+                  </a>
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-[#f2f4f6] text-[#906f70] flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[20px]">phone_disabled</span>
+                  </div>
+                )}
+                <button 
+                  onClick={() => alert("Opening secure dispatcher chat...")}
+                  className="w-10 h-10 rounded-full bg-[#e11d48] hover:bg-[#b80035] text-white flex items-center justify-center transition-all shadow-sm" 
+                  title="Message Courier" 
+                  type="button"
+                >
+                  <span className="material-symbols-outlined text-[20px]">chat</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Primary ETA & Milestone Card */}
+          <div className="w-full bg-white rounded-2xl p-5 shadow-sm space-y-4 border border-[#e0e3e5]/60">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#eceef0]">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] uppercase tracking-wider text-[#b80035] font-bold">Estimated Arrival</span>
+                  <span className="px-2 py-0.5 rounded-full bg-[#4edea3]/30 text-[#002113] text-[10px] font-bold">On Schedule</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-extrabold tracking-tight text-[#191c1e]">{etaMinutes} mins</span>
+                  <span className="text-xs text-[#565e74]">expected live sync</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 bg-[#f2f4f6] px-3.5 py-2 rounded-xl">
+                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-[#b80035] shadow-sm">
+                  <span className="material-symbols-outlined text-[18px]">route</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-[#565e74] uppercase font-bold">Distance Left</span>
+                  <span className="font-bold text-sm text-[#191c1e]">{distanceKm} km</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 5-Step Order Progress Timeline */}
+            <div className="space-y-2 pt-1">
+              <span className="text-xs text-[#565e74] uppercase font-bold tracking-wider">Live Delivery Progression</span>
+              <div className="relative pt-2 pb-2">
+                <div className="absolute top-5 left-4 right-4 h-1 bg-[#eceef0] rounded-full -z-0"></div>
+                <div className="absolute top-5 left-4 h-1 bg-[#e11d48] rounded-full -z-0 transition-all duration-700" style={{ width: `${progressPercent}%` }}></div>
+                
+                <div className="relative z-10 flex items-start justify-between">
+                  {getTimelineSteps().map((step, idx) => {
+                    const isActive = idx <= timelineIndex;
+                    const isCurrent = idx === timelineIndex;
+                    
+                    return (
+                      <div key={step} className="flex flex-col items-center text-center max-w-[64px]">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm text-xs font-bold transition-all ${
+                          isActive 
+                            ? 'bg-[#e11d48] text-white' 
+                            : 'bg-[#eceef0] text-[#565e74]'
+                        }`}>
+                          <span className="material-symbols-outlined text-[15px]">
+                            {getTimelineIcon(idx)}
+                          </span>
+                        </div>
+                        <span className={`mt-1.5 text-[10px] font-bold ${isCurrent ? 'text-[#b80035]' : 'text-[#191c1e]'}`}>
+                          {step}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Tracking Note Bulletin */}
+            <div className="bg-[#f2f4f6] rounded-xl p-3.5 flex items-start gap-3">
+              <div className="w-7 h-7 rounded-full bg-[#006847]/10 text-[#006847] flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="material-symbols-outlined text-[16px]">local_shipping</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-[#191c1e]">Active Telemetry Note</span>
+                <span className="text-xs text-[#565e74] leading-relaxed">
+                  {orderData?.tracking_note || "Your route is monitored live via high precision server dispatch nodes."}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Route & Waypoints Visualizer Card */}
+          <div className="w-full bg-white rounded-2xl p-5 shadow-sm space-y-4 border border-[#e0e3e5]/60">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-sm text-[#191c1e]">Route & Destination</span>
+              <span className="text-[10px] px-2.5 py-1 rounded-full bg-[#dae2fd] text-[#3f465c] font-bold uppercase">Priority Direct</span>
+            </div>
+            
+            <div className="relative pl-6 space-y-4">
+              <div className="absolute left-2.5 top-2 bottom-3 w-0.5 bg-[#e0e3e5]"></div>
+              
+              <div className="relative flex items-start gap-3">
+                <div className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-white border-2 border-[#565e74] flex items-center justify-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#565e74]"></span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-[#565e74] uppercase font-bold">Pickup Origin</span>
+                  <span className="font-bold text-xs text-[#191c1e]">Central Merchant Hub</span>
+                  <span className="text-xs text-[#565e74]">Verified Dispatch Station</span>
+                </div>
+              </div>
+
+              <div className="relative flex items-start gap-3">
+                <div className="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full bg-white border-2 border-[#b80035] flex items-center justify-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#b80035]"></span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] text-[#b80035] uppercase font-bold">Drop-off Destination</span>
+                  <span className="font-bold text-xs text-[#191c1e]">
+                    {orderData?.destination_address || orderData?.delivery_address || 'Customer Delivery Address'}
+                  </span>
+                  <span className="text-xs text-[#565e74]">Drop-off Protocol: Contactless Delivery</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Package Manifest & Summary Card */}
+          <div className="w-full bg-white rounded-2xl p-5 shadow-sm space-y-4 border border-[#e0e3e5]/60">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#565e74] text-[18px]">shopping_bag</span>
+                <span className="font-bold text-sm text-[#191c1e]">Session Summary</span>
+              </div>
+              <button 
+                onClick={() => setShowReceipt(!showReceipt)} 
+                className="text-xs font-bold text-[#b80035] hover:underline" 
+                type="button"
+              >
+                {showReceipt ? 'Hide Details' : 'Show Details'}
+              </button>
+            </div>
+
+            {showReceipt && (
+              <div className="space-y-3 pt-2 border-t border-[#eceef0] text-xs">
+                <div className="flex justify-between text-[#565e74]">
+                  <span>Reference ID</span>
+                  <span className="font-mono text-[#191c1e]">#{orderData?.order_reference || orderData?.ride_id || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between text-[#565e74]">
+                  <span>Payment Status</span>
+                  <span className="text-[#006847] font-bold">Verified & Paid</span>
+                </div>
+                <div className="flex justify-between text-[#565e74]">
+                  <span>Telemetry Protocol</span>
+                  <span className="text-[#191c1e]">WebSockets / Realtime Sync</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+        </main>
+
+        {/* Global Bottom Navigation Bar */}
+     
+
+      </div>
     </div>
   );
 };
-
-const TrackingStat = ({ label, value }) => (
-  <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
-    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{label}</p>
-    <p className="mt-2 text-lg font-extrabold text-slate-900">{value}</p>
-  </div>
-);

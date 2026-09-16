@@ -12,6 +12,11 @@ export const requestRide = async (payload) => {
   return data;
 };
 
+export const initializeRidePaystackCheckout = async (rideId) => {
+  const { data } = await http.post(`/rides/${rideId}/paystack/initialize`);
+  return data;
+};
+
 export const fetchRideStatus = async (rideId) => {
   const { data } = await http.get(`/rides/${rideId}`);
   return data;

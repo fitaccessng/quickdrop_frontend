@@ -1,9 +1,19 @@
 import React, { useMemo, useState } from "react";
+import { Bell } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
 import { fetchProducts } from "../api/products";
-import { createVendorPromotion, fetchVendorAnalytics, fetchVendorPayouts, fetchVendorProfile, fetchVendorPromotions } from "../api/vendorPortal";
+import { fetchNotificationUnreadCount } from "../api/notifications";
+import {
+  createVendorPromotion,
+  fetchVendorAnalytics,
+  fetchVendorPayouts,
+  fetchVendorProfile,
+  fetchVendorPromotions,
+  updateVendorPromotion,
+  updateVendorPromotionStatus,
+} from "../api/vendorPortal";
 import { formatMoney } from "../lib/utils";
 import { getInventoryStats } from "../lib/vendorPortal";
 
@@ -19,11 +29,18 @@ export const VendorAnalyticsPage = () => {
     discount_percent: "",
   });
   const [promoMessage, setPromoMessage] = useState("");
+  const [editingPromotionId, setEditingPromotionId] = useState(null);
 
   const profileQuery = useQuery({ queryKey: ["vendor-profile"], queryFn: fetchVendorProfile });
   const analyticsQuery = useQuery({ queryKey: ["vendor-analytics"], queryFn: fetchVendorAnalytics });
   const payoutsQuery = useQuery({ queryKey: ["vendor-payouts"], queryFn: fetchVendorPayouts });
   const promotionsQuery = useQuery({ queryKey: ["vendor-promotions"], queryFn: fetchVendorPromotions });
+  const unreadQuery = useQuery({
+    queryKey: ["notifications-unread-count", "vendor", profileQuery.data?.id],
+    queryFn: fetchNotificationUnreadCount,
+    enabled: Boolean(profileQuery.data?.id),
+    refetchInterval: 10000,
+  });
   const productsQuery = useQuery({
     queryKey: ["vendor-products-analytics", profileQuery.data?.id],
     queryFn: () => fetchProducts({ vendor_id: profileQuery.data.id, include_unavailable: true }),
@@ -39,9 +56,12 @@ export const VendorAnalyticsPage = () => {
   const promotions = promotionsQuery.data ?? analytics?.promotions ?? [];
 
   const promoMutation = useMutation({
-    mutationFn: createVendorPromotion,
+    mutationFn: (payload) => editingPromotionId
+      ? updateVendorPromotion({ promotionId: editingPromotionId, ...payload })
+      : createVendorPromotion(payload),
     onSuccess: () => {
-      setPromoMessage("Promotion submitted for admin review.");
+      setPromoMessage(editingPromotionId ? "Promotion updated." : "Promotion submitted for admin review.");
+      setEditingPromotionId(null);
       setPromoForm({
         promo_type: "seasonal_discount",
         product_id: "",
@@ -58,6 +78,31 @@ export const VendorAnalyticsPage = () => {
     },
   });
 
+  const promoStatusMutation = useMutation({
+    mutationFn: updateVendorPromotionStatus,
+    onSuccess: () => {
+      setPromoMessage("Promotion status updated.");
+      queryClient.invalidateQueries({ queryKey: ["vendor-promotions"] });
+      queryClient.invalidateQueries({ queryKey: ["vendor-analytics"] });
+    },
+    onError: (error) => {
+      const detail = error?.response?.data?.detail;
+      setPromoMessage(typeof detail === "string" ? detail : "Unable to update promotion status right now.");
+    },
+  });
+
+  const beginPromotionEdit = (promotion) => {
+    setEditingPromotionId(promotion.id);
+    setPromoForm({
+      promo_type: promotion.promo_type || "seasonal_discount",
+      product_id: promotion.product_id ? String(promotion.product_id) : "",
+      title: promotion.title || "",
+      description: promotion.description || "",
+      discount_percent: promotion.discount_percent ?? "",
+    });
+    setPromoMessage("");
+  };
+
   return (
     <div className="min-h-screen bg-[#FBFBFB] pt-20 font-body antialiased text-slate-900 pb-32">
       <header className="fixed top-0 z-50 flex w-full items-center justify-between bg-white/80 backdrop-blur-xl px-6 py-4 border-b border-slate-50">
@@ -68,11 +113,19 @@ export const VendorAnalyticsPage = () => {
           <span className="material-symbols-outlined text-xl">arrow_back_ios_new</span>
         </button>
         <div className="h-10 w-10 overflow-hidden rounded-full border-2 border-white shadow-sm">
-          <img
-            alt="Vendor Profile"
-            src={profileQuery.data?.logo_url || "/favicon.svg"}
-            className="h-full w-full object-cover"
-          />
+          <button
+            type="button"
+            onClick={() => navigate("/vendor/notifications")}
+            className="relative flex h-full w-full items-center justify-center rounded-full bg-slate-100 text-slate-700"
+            aria-label="Vendor notifications"
+          >
+            <Bell size={18} />
+            {(unreadQuery.data?.unread_count ?? 0) > 0 && (
+              <span className="absolute -right-1 -top-1 min-w-[1rem] rounded-full bg-[#ff9300] px-1 py-0.5 text-[9px] font-black text-white">
+                {(unreadQuery.data?.unread_count ?? 0) > 9 ? "9+" : unreadQuery.data.unread_count}
+              </span>
+            )}
+          </button>
         </div>
       </header>
 
@@ -221,8 +274,20 @@ export const VendorAnalyticsPage = () => {
                   className="w-full rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm font-bold text-slate-900 outline-none placeholder:text-slate-400"
                 />
                 <button className="rounded-full bg-slate-900 px-5 py-3 text-sm font-black uppercase tracking-widest text-white">
-                  {promoMutation.isPending ? "Submitting..." : "Configure Promos"}
+                  {promoMutation.isPending ? "Saving..." : editingPromotionId ? "Save Promotion" : "Configure Promos"}
                 </button>
+                {editingPromotionId ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingPromotionId(null);
+                      setPromoForm({ promo_type: "seasonal_discount", product_id: "", title: "", description: "", discount_percent: "" });
+                    }}
+                    className="text-xs font-bold text-slate-500 underline"
+                  >
+                    Cancel edit
+                  </button>
+                ) : null}
                 {promoMessage ? <p className="text-sm font-bold text-slate-600">{promoMessage}</p> : null}
               </form>
            </div>
@@ -243,13 +308,30 @@ export const VendorAnalyticsPage = () => {
                     <p className="text-xs text-slate-500">{promo.product_name || "All products"} • {promo.promo_type.replaceAll("_", " ")}</p>
                   </div>
                   <span className={`rounded-full px-3 py-2 text-[10px] font-black uppercase tracking-wider ${
-                    promo.status === "approved" ? "bg-emerald-100 text-emerald-700" : promo.status === "rejected" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"
+                    ["approved", "active"].includes(promo.status) ? "bg-emerald-100 text-emerald-700" : promo.status === "rejected" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"
                   }`}>
                     {promo.status}
                   </span>
                 </div>
                 <p className="mt-3 text-sm text-slate-600">{promo.description}</p>
                 {promo.admin_note ? <p className="mt-2 text-xs font-bold text-slate-500">Admin note: {promo.admin_note}</p> : null}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {["pending", "rejected", "inactive"].includes(promo.status) ? (
+                    <button type="button" onClick={() => beginPromotionEdit(promo)} className="rounded-lg bg-white px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-700">
+                      Edit
+                    </button>
+                  ) : null}
+                  {promo.status === "approved" || promo.status === "inactive" ? (
+                    <button type="button" disabled={promoStatusMutation.isPending} onClick={() => promoStatusMutation.mutate({ promotionId: promo.id, status: "active" })} className="rounded-lg bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-700">
+                      Activate
+                    </button>
+                  ) : null}
+                  {promo.status === "active" ? (
+                    <button type="button" disabled={promoStatusMutation.isPending} onClick={() => promoStatusMutation.mutate({ promotionId: promo.id, status: "inactive" })} className="rounded-lg bg-slate-100 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-700">
+                      Deactivate
+                    </button>
+                  ) : null}
+                </div>
               </div>
             )) : <p className="text-sm text-slate-500">No promotions submitted yet.</p>}
           </div>

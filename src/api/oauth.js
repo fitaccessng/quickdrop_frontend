@@ -35,12 +35,12 @@ export const loginWithApple = async (appleToken, appleUser) => {
  * Initialize Google OAuth SDK
  * Call this once on app initialization
  */
-export const initGoogleAuth = (clientId) => {
+export const initGoogleAuth = (clientId, callback) => {
   return new Promise((resolve, reject) => {
     if (window.google) {
       window.google.accounts.id.initialize({
         client_id: clientId,
-        callback: resolve,
+        callback: callback || resolve,
       });
       resolve();
     } else {
@@ -51,7 +51,7 @@ export const initGoogleAuth = (clientId) => {
       script.onload = () => {
         window.google.accounts.id.initialize({
           client_id: clientId,
-          callback: resolve,
+          callback: callback || resolve,
         });
         resolve();
       };
@@ -94,15 +94,15 @@ export const initAppleAuth = () => {
  * Trigger Apple Sign In
  */
 export const triggerAppleSignIn = () => {
-  if (window.AppleID) {
-    window.AppleID.auth.init({
-      clientId: import.meta.env.VITE_APPLE_CLIENT_ID,
-      teamId: import.meta.env.VITE_APPLE_TEAM_ID,
-      keyId: import.meta.env.VITE_APPLE_KEY_ID,
-      redirectURI: import.meta.env.VITE_APPLE_REDIRECT_URI,
-      usePopup: true,
-    });
-  }
+  if (!window.AppleID) throw new Error("Apple sign-in is unavailable.");
+  window.AppleID.auth.init({
+    clientId: import.meta.env.VITE_APPLE_CLIENT_ID,
+    teamId: import.meta.env.VITE_APPLE_TEAM_ID,
+    keyId: import.meta.env.VITE_APPLE_KEY_ID,
+    redirectURI: import.meta.env.VITE_APPLE_REDIRECT_URI,
+    usePopup: true,
+  });
+  return window.AppleID.auth.signIn();
 };
 
 /**
