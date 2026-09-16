@@ -3,14 +3,18 @@ import axios from "axios";
 import { useAuthStore } from "../store/authStore";
 
 export const resolveApiBaseUrl = () => {
-  const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+  const configuredBaseUrl = (
+    import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_BACKEND_URL
+  )?.trim();
   const hasWindow = typeof window !== "undefined";
   const hostname = hasWindow ? window.location.hostname : "";
   const origin = hasWindow ? window.location.origin : "";
   const isLocalFrontend = ["localhost", "127.0.0.1"].includes(hostname);
 
   if (configuredBaseUrl) {
-    return configuredBaseUrl;
+    return /^https?:\/\//i.test(configuredBaseUrl)
+      ? configuredBaseUrl.replace(/\/$/, "")
+      : `https://${configuredBaseUrl}`;
   }
 
   if (isLocalFrontend) {
