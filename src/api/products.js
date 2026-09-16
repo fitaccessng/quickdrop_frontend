@@ -2,7 +2,7 @@ import http from "./http";
 
 export const fetchProducts = async (params) => {
   const { data } = await http.get("/products", { params });
-  return data;
+  return Array.isArray(data) ? data : data?.items ?? data?.products ?? [];
 };
 
 export const fetchProduct = async (productId) => {

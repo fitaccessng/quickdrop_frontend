@@ -2,7 +2,7 @@ import http from "./http";
 
 export const fetchVendors = async (params) => {
   const { data } = await http.get("/vendors", { params });
-  return data;
+  return Array.isArray(data) ? data : data?.items ?? data?.vendors ?? [];
 };
 
 export const fetchVendor = async (id) => {
