@@ -1,10 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState, memo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AuthLayout } from "../components/auth/AuthLayout";
 import { registerVendor } from "../api/auth";
-import { FaApple } from "react-icons/fa";
 import { getApiErrorMessage } from "../lib/errorMessage";
+import quickdropLogo from "../styles/quickdrop.jpeg";
 
 const initialState = {
   business_name: "",
@@ -27,20 +26,27 @@ const fileToDataUrl = (file) =>
   });
 
 // --- Move FormInput OUTSIDE the main component to prevent focus loss ---
-const FormInput = ({ label, icon, ...props }) => (
-  <div className="space-y-2">
-    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">
-      {label}
-    </label>
-    <div className="relative">
-      <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
-        {icon}
-      </span>
-      <input
-        {...props}
-        className="w-full bg-white border border-slate-200 rounded-2xl py-4 pl-12 pr-4 text-sm font-bold focus:border-[#ff9300] focus:ring-1 focus:ring-[#ff9300] outline-none transition-all placeholder:text-slate-300 text-slate-700"
-      />
-    </div>
+const FormInput = ({ label, icon, type = "text", showPasswordToggle, showPassword, onTogglePassword, ...props }) => (
+  <div className="relative">
+    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">
+      {icon}
+    </span>
+    <input
+      type={showPasswordToggle && showPassword ? "text" : type}
+      {...props}
+      className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 pl-12 pr-12 text-slate-900 placeholder:text-slate-400 focus:border-[#ff9300] focus:ring-2 focus:ring-[#ff9300]/20 outline-none transition-all font-medium text-sm"
+    />
+    {showPasswordToggle && (
+      <button
+        type="button"
+        onClick={onTogglePassword}
+        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors focus:outline-none"
+      >
+        <span className="material-symbols-outlined text-xl">
+          {showPassword ? "visibility_off" : "visibility"}
+        </span>
+      </button>
+    )}
   </div>
 );
 
@@ -84,6 +90,8 @@ export const VendorSignupPage = () => {
   const [formError, setFormError] = useState("");
   const [logoPreview, setLogoPreview] = useState("");
   const [coverPreview, setCoverPreview] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const categories = ["Food & Beverages", "Retail", "Electronics", "Fashion", "Pharmacy", "Others"];
   const cities = ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika"];
@@ -91,7 +99,6 @@ export const VendorSignupPage = () => {
   const mutation = useMutation({
     mutationFn: registerVendor,
     onSuccess: (data) => {
-      // Don't auto-login, let them log in to trigger onboarding check
       navigate("/vendor/login");
     },
     onError: (err) => setFormError(getApiErrorMessage(err, "Registration failed"))
@@ -123,108 +130,140 @@ export const VendorSignupPage = () => {
   };
 
   return (
-    <AuthLayout
-      title="Merchant Sign Up"
-      subtitle="Join the Kinetic network and scale your business."
-      variant="vendor"
-    >
-      <div className="max-w-xl mx-auto w-full px-2">
-        {/* Social Buttons - Responsive Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-          <button type="button" className="flex items-center justify-center gap-3 py-4 rounded-2xl bg-white border border-slate-200 font-bold text-sm hover:bg-slate-50 active:scale-95 transition-all">
-            <img alt="Google" className="w-5 h-5" src="https://www.svgrepo.com/show/475656/google-color.svg" />
-            Google
-          </button>
-          <button type="button" className="flex items-center justify-center gap-3 py-4 rounded-2xl bg-slate-900 text-white font-bold text-sm hover:bg-black active:scale-95 transition-all">
-            <FaApple className="text-xl" />
-            Apple
-          </button>
-        </div>
+    <div className="min-h-screen bg-slate-950 flex flex-col font-body">
+      {/* --- Branding Header --- */}
+      <div className="pt-10 pb-8 px-6 flex flex-col items-center text-center">
+        <img 
+          src={quickdropLogo} 
+          alt="QuickDrop" 
+          className="h-14 w-14 rounded-2xl mb-4 shadow-2xl border border-white/10" 
+        />
+        <h1 className="text-white font-headline text-2xl font-black tracking-tight">Merchant Sign Up</h1>
+        <p className="text-slate-400 text-xs mt-1 font-medium tracking-wide">Join the QuickDrop network and scale your business.</p>
+      </div>
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          {formError && <p className="text-rose-500 text-[10px] font-black uppercase text-center bg-rose-50 py-3 rounded-xl border border-rose-100">{formError}</p>}
+      {/* --- Bottom Sheet Container --- */}
+      <div className="flex-1 bg-white rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.4)] px-6 pt-8 pb-10 overflow-y-auto">
+        <div className="max-w-md mx-auto">
+          
+          <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-8 -mt-2" />
 
-          <FormInput 
-            label="Business Name" icon="store" name="business_name" placeholder="Ex: Kinetic Electronics"
-            value={form.business_name} onChange={handleChange} required
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormInput 
-              label="Email" icon="mail" name="email" type="email" placeholder="vendor@kinetic.io"
-              value={form.email} onChange={handleChange} required
-            />
-            <FormInput 
-              label="Phone" icon="phone" name="phone" type="tel" placeholder="+254..."
-              value={form.phone} onChange={handleChange} required
-            />
+          {/* Social Cluster - Google only */}
+          <div className="grid grid-cols-1 gap-3 mb-6">
+            <button 
+              type="button"
+              className="flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm active:bg-slate-50 active:scale-[0.97] transition-all"
+            >
+              <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-4 h-4" alt="G" />
+              <span className="text-slate-700 font-bold text-sm">Continue with Google</span>
+            </button>
           </div>
 
-          {/* --- Responsive Selection Grid --- */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Category</label>
+          <div className="relative flex py-3 items-center mb-6">
+            <div className="flex-grow border-t border-slate-100"></div>
+            <span className="mx-4 text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">Or use email</span>
+            <div className="flex-grow border-t border-slate-100"></div>
+          </div>
+
+          {formError && (
+            <div className="mb-6 p-4 rounded-2xl text-xs font-bold border animate-in fade-in zoom-in-95 bg-red-50 text-red-600 border-red-100 text-center">
+              {formError}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            <FormInput 
+              icon="store" name="business_name" placeholder="Business Name"
+              value={form.business_name} onChange={handleChange} required
+            />
+
+            <FormInput 
+              icon="mail" name="email" type="email" placeholder="Email Address"
+              value={form.email} onChange={handleChange} required
+            />
+
+            <FormInput 
+              icon="phone" name="phone" type="tel" placeholder="Phone Number"
+              value={form.phone} onChange={handleChange} required
+            />
+
+            {/* --- Selection Modals --- */}
+            <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setActiveModal('category')}
-                className="w-full flex items-center justify-between bg-white border border-slate-200 rounded-2xl py-4 px-4 text-sm font-bold active:scale-[0.98] transition-all"
+                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl py-4 px-4 text-sm font-medium active:scale-[0.98] transition-all"
               >
-                <span className={form.category ? 'text-slate-800' : 'text-slate-300'}>{form.category || "Select..."}</span>
+                <span className={form.category ? 'text-slate-900 font-bold' : 'text-slate-400'}>{form.category || "Category"}</span>
                 <span className="material-symbols-outlined text-slate-400">expand_more</span>
               </button>
-            </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">City</label>
               <button
                 type="button"
                 onClick={() => setActiveModal('city')}
-                className="w-full flex items-center justify-between bg-white border border-slate-200 rounded-2xl py-4 px-4 text-sm font-bold active:scale-[0.98] transition-all"
+                className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl py-4 px-4 text-sm font-medium active:scale-[0.98] transition-all"
               >
-                <span className={form.city ? 'text-slate-800' : 'text-slate-300'}>{form.city || "Select..."}</span>
+                <span className={form.city ? 'text-slate-900 font-bold' : 'text-slate-400'}>{form.city || "City"}</span>
                 <span className="material-symbols-outlined text-slate-400">expand_more</span>
               </button>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ImagePicker
-              label="Company Logo"
-              preview={logoPreview}
-              onChange={(event) => handleImageSelect(event, "logo_url")}
-            />
-            <ImagePicker
-              label="Company Profile Image"
-              preview={coverPreview}
-              onChange={(event) => handleImageSelect(event, "cover_image_url")}
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <ImagePicker
+                label="Company Logo"
+                preview={logoPreview}
+                onChange={(event) => handleImageSelect(event, "logo_url")}
+              />
+              <ImagePicker
+                label="Cover Image"
+                preview={coverPreview}
+                onChange={(event) => handleImageSelect(event, "cover_image_url")}
+              />
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormInput 
-              label="Password" icon="lock" name="password" type="password" placeholder="••••••••"
-              value={form.password} onChange={handleChange} required
+              icon="lock" 
+              name="password" 
+              type="password" 
+              placeholder="Password"
+              value={form.password} 
+              onChange={handleChange} 
+              required
+              showPasswordToggle={true}
+              showPassword={showPassword}
+              onTogglePassword={() => setShowPassword(prev => !prev)}
             />
+
             <FormInput 
-              label="Confirm Password" icon="lock_reset" name="confirm_password" type="password" placeholder="••••••••"
-              value={form.confirm_password} onChange={handleChange} required
+              icon="lock_reset" 
+              name="confirm_password" 
+              type="password" 
+              placeholder="Confirm Password"
+              value={form.confirm_password} 
+              onChange={handleChange} 
+              required
+              showPasswordToggle={true}
+              showPassword={showConfirmPassword}
+              onTogglePassword={() => setShowConfirmPassword(prev => !prev)}
             />
-          </div>
 
-          <button
-            className="w-full py-5 rounded-[2rem] text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-orange-200/50 active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-4"
-            style={{ background: "linear-gradient(135deg, #ff9300 0%, #ffb857 100%)" }}
-            type="submit"
-            disabled={mutation.isPending}
-          >
-            {mutation.isPending ? 'Syncing...' : 'Launch Merchant Account'}
-            <span className="material-symbols-outlined">rocket_launch</span>
-          </button>
-        </form>
+            <button
+              className="w-full bg-[#ff9300] text-white font-black py-5 rounded-[2rem] shadow-xl shadow-orange-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-4 disabled:opacity-50"
+              type="submit"
+              disabled={mutation.isPending}
+            >
+              {mutation.isPending ? 'Processing...' : 'Launch Merchant Account'}
+              <span className="material-symbols-outlined font-bold">rocket_launch</span>
+            </button>
+          </form>
 
-        <p className="mt-10 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
-          Already a partner? <Link to="/vendor/login" className="text-[#ff9300] hover:underline ml-1">Sign In</Link>
-        </p>
+          <p className="mt-8 text-center text-sm font-bold text-slate-400">
+            Already a partner?{' '}
+            <Link to="/vendor/login" className="text-[#ff9300] font-black underline underline-offset-4 ml-1">
+              Sign In
+            </Link>
+          </p>
+        </div>
       </div>
 
       <BottomModal 
@@ -243,21 +282,21 @@ export const VendorSignupPage = () => {
         selectedValue={form.city}
         onSelect={(val) => setForm(prev => ({...prev, city: val}))}
       />
-    </AuthLayout>
+    </div>
   );
 };
 
 const ImagePicker = ({ label, preview, onChange }) => (
-  <div className="space-y-2">
+  <div className="space-y-1">
     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{label}</label>
-    <label className="block cursor-pointer overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white">
-      <div className="flex h-40 items-center justify-center bg-slate-50">
+    <label className="block cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+      <div className="flex h-32 items-center justify-center">
         {preview ? (
           <img src={preview} alt={label} className="h-full w-full object-cover" />
         ) : (
           <div className="text-center text-slate-400">
-            <span className="material-symbols-outlined text-3xl">add_photo_alternate</span>
-            <p className="mt-2 text-xs font-bold uppercase">Upload image</p>
+            <span className="material-symbols-outlined text-2xl">add_photo_alternate</span>
+            <p className="mt-1 text-[10px] font-bold uppercase">Upload</p>
           </div>
         )}
       </div>

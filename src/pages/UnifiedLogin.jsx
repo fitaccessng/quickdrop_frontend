@@ -5,14 +5,10 @@ import { unifiedLogin } from '../api/auth';
 import { resolvePostAuthRoute } from '../lib/authRouting';
 import { useAuthStore } from '../store/authStore';
 import {
-  handleAppleResponse,
   handleGoogleCredentialResponse,
-  initAppleAuth,
   initGoogleAuth,
-  triggerAppleSignIn,
   triggerGoogleSignIn,
 } from '../api/oauth';
-import { FaApple } from "react-icons/fa";
 import quickdropLogo from "../styles/quickdrop.jpeg";
 
 export const UnifiedLogin = () => {
@@ -45,17 +41,6 @@ export const UnifiedLogin = () => {
         }
       });
       triggerGoogleSignIn();
-    } catch (error) {
-      setOauthMessage(error.message);
-    }
-  };
-
-  const handleAppleLogin = async () => {
-    setFormError('');
-    setOauthMessage('Connecting to Apple...');
-    try {
-      await initAppleAuth();
-      completeOAuthLogin(await handleAppleResponse(await triggerAppleSignIn()));
     } catch (error) {
       setOauthMessage(error.message);
     }
@@ -100,24 +85,15 @@ export const UnifiedLogin = () => {
           
           <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-10 -mt-4" />
 
-          {/* Social Cluster */}
-          <div className="grid grid-cols-2 gap-4 mb-8">
+          {/* Social Cluster - Google only */}
+          <div className="grid grid-cols-1 gap-4 mb-8">
             <button 
               onClick={handleGoogleLogin}
               type="button"
               className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-white border border-slate-200 shadow-sm active:bg-slate-50 active:scale-[0.98] transition-all"
             >
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="G" />
-              <span className="text-slate-700 font-bold text-sm">Google</span>
-            </button>
-
-            <button 
-              onClick={handleAppleLogin}
-              type="button"
-              className="flex items-center justify-center gap-2 py-4 rounded-2xl bg-black active:opacity-80 active:scale-[0.98] transition-all"
-            >
-              <FaApple className="text-white text-xl mb-0.5" />
-              <span className="text-white font-bold text-sm">Apple</span>
+              <span className="text-slate-700 font-bold text-sm">Continue with Google</span>
             </button>
           </div>
 
@@ -138,7 +114,7 @@ export const UnifiedLogin = () => {
             <div className="relative">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">mail</span>
               <input
-                className="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-12 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#ff9300] outline-none transition-all font-medium text-sm"
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 pl-12 pr-12 text-slate-900 placeholder:text-slate-400 focus:border-[#ff9300] focus:ring-2 focus:ring-[#ff9300]/20 outline-none transition-all font-medium text-sm"
                 placeholder="Email Address"
                 type="email"
                 required
@@ -151,7 +127,7 @@ export const UnifiedLogin = () => {
             <div className="relative">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">lock</span>
               <input
-                className="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-12 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#ff9300] outline-none transition-all font-medium text-sm"
+                className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 pl-12 pr-12 text-slate-900 placeholder:text-slate-400 focus:border-[#ff9300] focus:ring-2 focus:ring-[#ff9300]/20 outline-none transition-all font-medium text-sm"
                 placeholder="Password"
                 type={showPassword ? 'text' : 'password'}
                 required
@@ -177,7 +153,7 @@ export const UnifiedLogin = () => {
                 />
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-tight group-hover:text-slate-700">Remember me</span>
               </label>
-              <Link to="/forgot-password" size="sm" className="text-xs font-black text-[#ff9300] uppercase tracking-tight hover:underline">
+              <Link to="/forgot-password" className="text-xs font-black text-[#ff9300] uppercase tracking-tight hover:underline">
                 Forgot Password?
               </Link>
             </div>

@@ -34,7 +34,7 @@ export const AppShell = () => {
   return (
     <div className="min-h-screen text-base-100">
       {/* <RealtimeNotifications /> */}
-      <main className="relative pb-28 md:pb-32">
+      <main className={shouldHideNav ? "relative" : "relative pb-28 md:pb-32"}>
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}

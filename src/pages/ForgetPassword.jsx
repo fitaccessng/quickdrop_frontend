@@ -49,7 +49,7 @@ export const ForgetPassword = () => {
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xl">mail</span>
                   <input
-                className="w-full bg-slate-50 border-none rounded-2xl py-4 pl-12 pr-12 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#ff9300] outline-none transition-all font-medium text-sm"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-4 pl-12 pr-12 text-slate-900 placeholder:text-slate-400 focus:border-[#ff9300] focus:ring-2 focus:ring-[#ff9300]/20 outline-none transition-all font-medium text-sm"
                     placeholder="Enter your email"
                     type="email"
                     required
@@ -94,7 +94,7 @@ export const ForgetPassword = () => {
                 </p>
               </div>
 
-              {/* Dev Token Info (Matches your previous logic) */}
+              {/* Dev Token Info */}
               {mutation.data?.reset_token && (
                 <div className="bg-orange-50 rounded-2xl p-5 mb-8 border border-orange-100">
                   <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-2">Development Token</p>

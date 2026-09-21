@@ -3,6 +3,7 @@ import axios from "axios";
 import { useAuthStore } from "../store/authStore";
 
 export const resolveApiBaseUrl = () => {
+  const isNativeBuild = import.meta.env.VITE_NATIVE_APP === "true";
   const configuredBaseUrl = (
     import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_BACKEND_URL
   )?.trim();
@@ -12,9 +13,17 @@ export const resolveApiBaseUrl = () => {
   const isLocalFrontend = ["localhost", "127.0.0.1"].includes(hostname);
 
   if (configuredBaseUrl) {
-    return /^https?:\/\//i.test(configuredBaseUrl)
+    const normalizedBaseUrl = /^https?:\/\//i.test(configuredBaseUrl)
       ? configuredBaseUrl.replace(/\/$/, "")
       : `https://${configuredBaseUrl}`;
+    if (isNativeBuild && !normalizedBaseUrl.startsWith("https://")) {
+      throw new Error("Native production builds require an HTTPS API URL.");
+    }
+    return normalizedBaseUrl;
+  }
+
+  if (isNativeBuild) {
+    throw new Error("Native production builds require VITE_API_BASE_URL.");
   }
 
   if (isLocalFrontend) {

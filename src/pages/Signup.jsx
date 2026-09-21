@@ -4,7 +4,6 @@ import { useMutation } from '@tanstack/react-query';
 import { AuthLayout } from '../components/auth/AuthLayout';
 import { registerUser } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
-import { FaApple } from "react-icons/fa";
 import quickdropLogo from "../styles/quickdrop.jpeg";
 
 export const Signup = () => {
@@ -35,6 +34,7 @@ export const Signup = () => {
       setFormError('Passwords do not match');
       return;
     }
+    setFormError(''); // Clear any previous errors
     signupMutation.mutate({ full_name: fullName, email, password, phone: '' });
   };
 
@@ -73,14 +73,6 @@ export const Signup = () => {
             <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="" />
             Continue with Google
           </button>
-          <button 
-            type="button"
-            onClick={() => setOauthMessage('Apple connection coming soon')}
-            className="flex items-center justify-center gap-3 h-[60px] w-full rounded-2xl bg-slate-900 text-white active:scale-[0.98] transition-all font-bold"
-          >
-            <FaApple className="text-xl" />
-            Continue with Apple
-          </button>
         </div>
 
         <div className="relative flex items-center mb-8">
@@ -88,6 +80,12 @@ export const Signup = () => {
           <span className="mx-4 text-slate-400 text-xs font-black uppercase tracking-widest">or email</span>
           <div className="flex-grow border-t border-slate-100"></div>
         </div>
+
+        {formError && (
+          <div className="mb-4 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm font-bold text-center">
+            {formError}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Input Group */}
@@ -140,6 +138,28 @@ export const Signup = () => {
             </button>
           </div>
 
+          {/* Confirm Password Field */}
+          <div className="group relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="peer w-full h-[64px] bg-slate-50 border-transparent border-2 rounded-2xl px-6 pt-5 text-slate-900 text-base font-bold placeholder-transparent focus:bg-white focus:border-[#ff9300] focus:ring-0 transition-all outline-none"
+              placeholder="Confirm Password"
+            />
+            <label className="absolute left-6 top-2 text-[10px] font-black uppercase tracking-widest text-slate-400 peer-placeholder-shown:text-base peer-placeholder-shown:top-5 peer-placeholder-shown:font-bold peer-focus:top-2 peer-focus:text-[10px] peer-focus:text-[#ff9300] transition-all pointer-events-none">
+              Confirm Password
+            </label>
+            <button 
+              type="button" 
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400"
+            >
+              <span className="material-symbols-outlined text-xl">{showConfirmPassword ? 'visibility_off' : 'visibility'}</span>
+            </button>
+          </div>
+
           {/* Custom Checkbox for Better Mobile Tapping */}
           <div className="flex items-start gap-3 py-2">
             <div className="relative flex items-center">
@@ -156,6 +176,11 @@ export const Signup = () => {
             </label>
           </div>
 
+          <p className="text-center text-slate-500 font-bold pt-2 pb-4">
+            Already a member?{' '}
+            <Link to="/login" className="text-[#ff9300] ml-1">Sign In</Link>
+          </p>
+
           <button
             type="submit"
             disabled={isLoading}
@@ -166,11 +191,6 @@ export const Signup = () => {
             <span className="material-symbols-outlined">arrow_forward</span>
           </button>
         </form>
-
-        <p className="mt-8 text-center text-slate-500 font-bold">
-          Already a member?{' '}
-          <Link to="/login" className="text-[#ff9300] ml-1">Sign In</Link>
-        </p>
       </div>
       
       {/* Bottom Padding for Mobile */}

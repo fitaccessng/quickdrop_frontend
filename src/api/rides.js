@@ -73,7 +73,7 @@ export const assignRideManually = async ({ rideId, rider_id }) => {
 };
 
 export const buildRideSocketUrl = ({ token, rideId }) => {
-  const baseUrl = new URL(API_BASE_URL, typeof window !== "undefined" ? window.location.origin : "http://localhost:8000");
+  const baseUrl = new URL(API_BASE_URL, typeof window !== "undefined" ? window.location.origin : API_BASE_URL);
   const socketOrigin = `${baseUrl.protocol === "https:" ? "wss:" : "ws:"}//${baseUrl.host}`;
   const basePath = baseUrl.pathname.replace(/\/$/, "");
   const url = new URL(`${basePath}/rides/ws`, socketOrigin);

@@ -39,7 +39,7 @@ export const fetchUserOrders = async () => {
 };
 
 export const buildOrderSocketUrl = ({ token, orderId }) => {
-  const baseUrl = new URL(API_BASE_URL, typeof window !== "undefined" ? window.location.origin : "http://localhost:8000");
+  const baseUrl = new URL(API_BASE_URL, typeof window !== "undefined" ? window.location.origin : API_BASE_URL);
   const socketOrigin = `${baseUrl.protocol === "https:" ? "wss:" : "ws:"}//${baseUrl.host}`;
   const basePath = baseUrl.pathname.replace(/\/$/, "");
   const url = new URL(`${basePath}/orders/ws`, socketOrigin);
