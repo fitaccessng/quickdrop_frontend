@@ -41,6 +41,7 @@ export const RoleSelectionModal = ({ isOpen, onSelectRole, isLoading }) => {
           {roles.map((role) => (
             <button
               key={role.id}
+              type="button"
               onClick={() => onSelectRole(role.id)}
               disabled={isLoading}
               className={`w-full p-5 rounded-2xl border-2 border-slate-200 hover:border-slate-300 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed text-left group`}

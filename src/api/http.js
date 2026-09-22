@@ -2,6 +2,8 @@ import axios from "axios";
 
 import { useAuthStore } from "../store/authStore";
 
+const PRODUCTION_API_BASE_URL = "https://quickdropbackend-production-6ba4.up.railway.app";
+
 export const resolveApiBaseUrl = () => {
   const isNativeBuild = import.meta.env.VITE_NATIVE_APP === "true";
   const configuredBaseUrl = (
@@ -31,7 +33,7 @@ export const resolveApiBaseUrl = () => {
   }
 
   if (origin) {
-    return origin;
+    return PRODUCTION_API_BASE_URL;
   }
 
   return "http://localhost:8000";

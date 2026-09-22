@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { RoleSelectionModal } from '../components/auth/RoleSelectionModal';
@@ -31,7 +31,7 @@ export const UnifiedSignup = () => {
   const [formError, setFormError] = useState('');
   const [oauthMessage, setOauthMessage] = useState('');
   const [showRoleModal, setShowRoleModal] = useState(false);
-  const [tempSignupData, setTempSignupData] = useState(null);
+  const pendingSignupRef = useRef(null);
 
   const completeOAuthSignup = (data) => {
     setSession(data.access_token, data.user, 'user');
@@ -71,18 +71,28 @@ export const UnifiedSignup = () => {
       setFormError('Please agree to the terms');
       return;
     }
-    setTempSignupData(form);
+
+    pendingSignupRef.current = { ...form };
     setShowRoleModal(true);
   };
 
   const handleRoleSelect = (role) => {
+    const signupData = pendingSignupRef.current;
+    if (!signupData) {
+      setFormError('Signup session expired. Please try again.');
+      setShowRoleModal(false);
+      return;
+    }
+
     setFormError('');
+    setShowRoleModal(false);
+
     const payload = {
-      full_name: tempSignupData.fullName,
-      email: tempSignupData.email,
-      phone: tempSignupData.phone || "",
-      password: tempSignupData.password,
-      role: role,
+      full_name: signupData.fullName,
+      email: signupData.email,
+      phone: signupData.phone || "",
+      password: signupData.password,
+      role,
     };
     signupMutation.mutate(payload);
   };
