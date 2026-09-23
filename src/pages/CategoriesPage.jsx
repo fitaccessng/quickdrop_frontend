@@ -209,7 +209,7 @@ export const CategoriesPage = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 sm:gap-4">
             {categories.map((cat) => {
               const fallbackImg = CATEGORY_FALLBACK_IMAGES[cat.name] || CATEGORY_FALLBACK_IMAGES['Others'];
-              const imageUrl = cat.image || fallbackImg;
+              const imageUrl = cat.image_url || fallbackImg;
               const categorySlug = cat.slug || slugify(cat.name);
 
               return (

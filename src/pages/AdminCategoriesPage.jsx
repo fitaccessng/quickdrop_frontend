@@ -11,6 +11,7 @@ import { AdminShell } from "../components/admin/AdminShell";
 const initialForm = {
   name: "",
   description: "",
+  image_url: "",
   is_active: true,
 };
 
@@ -63,6 +64,19 @@ export const AdminCategoriesPage = () => {
     createMutation.mutate(form);
   };
 
+  const handleImageSelect = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3.5 * 1024 * 1024) {
+      setMessage("Please choose an image smaller than 3.5 MB.");
+      event.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setForm((current) => ({ ...current, image_url: reader.result }));
+    reader.readAsDataURL(file);
+  };
+
   return (
     <AdminShell title="Service Categories" subtitle="Manage the category list used across onboarding, services, and product discovery.">
       <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
@@ -76,6 +90,27 @@ export const AdminCategoriesPage = () => {
               value={form.name}
               onChange={(value) => setForm((current) => ({ ...current, name: value }))}
             />
+            <div className="space-y-3">
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Category Image</span>
+              {form.image_url ? (
+                <div className="relative h-40 overflow-hidden rounded-2xl bg-slate-100">
+                  <img src={form.image_url} alt="Category preview" className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setForm((current) => ({ ...current, image_url: "" }))}
+                    className="absolute right-3 top-3 rounded-xl bg-slate-950/80 px-3 py-2 text-xs font-black text-white"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : null}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleImageSelect}
+                className="block w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-xs file:font-bold file:text-white"
+              />
+            </div>
             <label className="block space-y-2">
               <span className="text-xs font-black uppercase tracking-widest text-slate-400">Description</span>
               <textarea
@@ -136,15 +171,22 @@ export const AdminCategoriesPage = () => {
             <div className="mt-4 space-y-3">
               {categories.map((category) => (
                 <div key={category.id} className="flex flex-wrap items-center justify-between gap-4 rounded-[1.5rem] bg-slate-50 px-4 py-4">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-extrabold text-slate-900">{category.name}</p>
-                      <span className={`rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-widest ${category.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
-                        {category.is_active ? "Active" : "Inactive"}
-                      </span>
+                  <div className="flex min-w-0 items-center gap-3">
+                    {category.image_url ? (
+                      <img src={category.image_url} alt="" className="h-14 w-14 shrink-0 rounded-2xl object-cover" />
+                    ) : (
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-200 text-[10px] font-bold text-slate-500">Image</div>
+                    )}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-extrabold text-slate-900">{category.name}</p>
+                        <span className={`rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-widest ${category.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
+                          {category.is_active ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">{category.slug}</p>
+                      {category.description ? <p className="mt-2 text-sm text-slate-600">{category.description}</p> : null}
                     </div>
-                    <p className="mt-1 text-xs text-slate-500">{category.slug}</p>
-                    {category.description ? <p className="mt-2 text-sm text-slate-600">{category.description}</p> : null}
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -154,6 +196,7 @@ export const AdminCategoriesPage = () => {
                         setForm({
                           name: category.name || "",
                           description: category.description || "",
+                          image_url: category.image_url || "",
                           is_active: category.is_active,
                         });
                         setMessage("");
