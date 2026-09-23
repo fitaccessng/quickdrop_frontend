@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { AuthLayout } from "../components/auth/AuthLayout";
 import { adminSignup } from "../api/admin";
+import { getApiErrorMessage } from "../lib/errorMessage";
 import { useAuthStore } from "../store/authStore";
 
 export const AdminSignupPage = () => {
@@ -18,7 +19,7 @@ export const AdminSignupPage = () => {
       setSession(data.access_token, data.user, data.account_type);
       navigate("/admin/dashboard");
     },
-    onError: (err) => setError(err.response?.data?.detail || "Unable to create admin account."),
+    onError: (err) => setError(getApiErrorMessage(err, "Unable to create admin account.")),
   });
 
   return (
