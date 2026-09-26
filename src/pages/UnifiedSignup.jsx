@@ -32,10 +32,12 @@ export const UnifiedSignup = () => {
   const [oauthMessage, setOauthMessage] = useState('');
   const [showRoleModal, setShowRoleModal] = useState(false);
   const pendingSignupRef = useRef(null);
+  const pendingGoogleCredentialRef = useRef(null);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
 
   const completeOAuthSignup = (data) => {
-    setSession(data.access_token, data.user, 'user');
-    navigate(resolvePostAuthRoute('user', data.user));
+    setSession(data.access_token, data.user, data.account_type);
+    navigate(resolvePostAuthRoute(data.account_type, data.user));
   };
 
   const handleGoogleSignup = async () => {
@@ -46,7 +48,14 @@ export const UnifiedSignup = () => {
       if (!clientId) throw new Error('Google sign-in is not configured.');
       await initGoogleAuth(clientId, async (response) => {
         try {
-          completeOAuthSignup(await handleGoogleCredentialResponse(response));
+          const result = await handleGoogleCredentialResponse(response);
+          if (result.requires_role_selection) {
+            pendingGoogleCredentialRef.current = response;
+            setOauthMessage('');
+            setShowRoleModal(true);
+            return;
+          }
+          completeOAuthSignup(result);
         } catch (error) {
           setOauthMessage(error.message);
         }
@@ -54,6 +63,23 @@ export const UnifiedSignup = () => {
       triggerGoogleSignIn();
     } catch (error) {
       setOauthMessage(error.message);
+    }
+  };
+
+  const handleGoogleRoleSelect = async (role) => {
+    const credential = pendingGoogleCredentialRef.current;
+    if (!credential) return;
+    setGoogleSubmitting(true);
+    try {
+      const result = await handleGoogleCredentialResponse(credential, role);
+      pendingGoogleCredentialRef.current = null;
+      setShowRoleModal(false);
+      completeOAuthSignup(result);
+    } catch (error) {
+      setShowRoleModal(false);
+      setOauthMessage(error.message || 'Google signup failed. Please try again.');
+    } finally {
+      setGoogleSubmitting(false);
     }
   };
 
@@ -132,8 +158,8 @@ export const UnifiedSignup = () => {
 
           <RoleSelectionModal 
             isOpen={showRoleModal} 
-            onSelectRole={handleRoleSelect}
-            isLoading={isLoading}
+            onSelectRole={pendingGoogleCredentialRef.current ? handleGoogleRoleSelect : handleRoleSelect}
+            isLoading={isLoading || googleSubmitting}
           />
 
           {/* Social Cluster - Google only */}

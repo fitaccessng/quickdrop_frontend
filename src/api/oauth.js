@@ -4,10 +4,11 @@ import http from "./http";
  * Google OAuth Login/Signup
  * Initiates OAuth flow with Google
  */
-export const loginWithGoogle = async (googleToken) => {
+export const loginWithGoogle = async (googleToken, role) => {
   try {
     const { data } = await http.post("/auth/oauth/google", {
       token: googleToken,
+      ...(role ? { role } : {}),
     });
     return data;
   } catch (error) {
@@ -108,9 +109,9 @@ export const triggerAppleSignIn = () => {
 /**
  * Handle Google OAuth Response
  */
-export const handleGoogleCredentialResponse = async (response) => {
+export const handleGoogleCredentialResponse = async (response, role) => {
   try {
-    const result = await loginWithGoogle(response.credential);
+    const result = await loginWithGoogle(response.credential, role);
     return result;
   } catch (error) {
     console.error("Google OAuth Error:", error);

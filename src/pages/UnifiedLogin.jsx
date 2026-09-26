@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { unifiedLogin } from '../api/auth';
 import { resolvePostAuthRoute } from '../lib/authRouting';
 import { useAuthStore } from '../store/authStore';
+import { RoleSelectionModal } from '../components/auth/RoleSelectionModal';
 import {
   handleGoogleCredentialResponse,
   initGoogleAuth,
@@ -21,10 +22,13 @@ export const UnifiedLogin = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [formError, setFormError] = useState('');
   const [oauthMessage, setOauthMessage] = useState('');
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
+  const pendingGoogleCredentialRef = useRef(null);
 
   const completeOAuthLogin = (data) => {
-    setSession(data.access_token, data.user, 'user');
-    navigate(resolvePostAuthRoute('user', data.user));
+    setSession(data.access_token, data.user, data.account_type);
+    navigate(resolvePostAuthRoute(data.account_type, data.user));
   };
 
   const handleGoogleLogin = async () => {
@@ -35,7 +39,14 @@ export const UnifiedLogin = () => {
       if (!clientId) throw new Error('Google sign-in is not configured.');
       await initGoogleAuth(clientId, async (response) => {
         try {
-          completeOAuthLogin(await handleGoogleCredentialResponse(response));
+          const result = await handleGoogleCredentialResponse(response);
+          if (result.requires_role_selection) {
+            pendingGoogleCredentialRef.current = response;
+            setOauthMessage('');
+            setShowRoleModal(true);
+            return;
+          }
+          completeOAuthLogin(result);
         } catch (error) {
           setOauthMessage(error.message);
         }
@@ -43,6 +54,23 @@ export const UnifiedLogin = () => {
       triggerGoogleSignIn();
     } catch (error) {
       setOauthMessage(error.message);
+    }
+  };
+
+  const handleGoogleRoleSelect = async (role) => {
+    const credential = pendingGoogleCredentialRef.current;
+    if (!credential) return;
+    setGoogleSubmitting(true);
+    try {
+      const result = await handleGoogleCredentialResponse(credential, role);
+      pendingGoogleCredentialRef.current = null;
+      setShowRoleModal(false);
+      completeOAuthLogin(result);
+    } catch (error) {
+      setShowRoleModal(false);
+      setOauthMessage(error.message || 'Google signup failed. Please try again.');
+    } finally {
+      setGoogleSubmitting(false);
     }
   };
 
@@ -82,6 +110,12 @@ export const UnifiedLogin = () => {
       {/* --- Bottom Sheet Style Container --- */}
       <div className="flex-1 bg-white rounded-t-[3rem] shadow-[0_-10px_40px_rgba(0,0,0,0.4)] px-6 pt-10 pb-12 overflow-y-auto">
         <div className="max-w-md mx-auto">
+
+          <RoleSelectionModal
+            isOpen={showRoleModal}
+            onSelectRole={handleGoogleRoleSelect}
+            isLoading={googleSubmitting}
+          />
           
           <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-10 -mt-4" />
 
